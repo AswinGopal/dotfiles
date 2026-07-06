@@ -13,7 +13,7 @@
 #   - No function calls exit. Callers own control flow.
 #
 # Global state this file reads:
-#   MODULES          — set by os/<distro>.sh. Format: "key|Label|on|off" per entry.
+#   MODULES          — set by os/<distro>.sh. Format: "key|Label|default" per entry.
 #   LOG_FILE         — set by install.sh before any sourcing.
 #
 # Global state this file writes:
@@ -142,16 +142,16 @@ show_checklist() {
             --header="Select modules to run (↑↓ navigate, x select, enter confirm)" \
             "${_labels[@]}"
     ) || {
-        # User pressed Ctrl-C or Escape — treat as clean exit, not an error.
+        # User pressed Ctrl-C or Escape — signal clean exit to the caller.
         printf "\nSetup cancelled.\n" >&2
-        exit 0
+        return 1
     }
 
     # Reverse-map chosen labels → keys, preserving MODULES declaration order.
     local i label_i
     for (( i=0; i<${#_keys[@]}; i++ )); do
         label_i="${_labels[$i]}"
-        if grep -qF "$label_i" <<< "$chosen"; then
+        if grep -qxF "$label_i" <<< "$chosen"; then
             SELECTED_MODULES+=("${_keys[$i]}")
         fi
     done

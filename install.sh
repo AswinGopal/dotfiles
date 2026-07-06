@@ -207,7 +207,8 @@ done
 # ==============================================================================
 
 # Present the module checklist. Populates the global SELECTED_MODULES array.
-show_checklist
+# show_checklist returns 1 on Ctrl-C / Escape — exit cleanly here, not inside ui.sh.
+show_checklist || exit 0
 
 # Build a key → label lookup from MODULES for run-loop announcements.
 # MODULES is declared by os/$OS_ID.sh; format: "key|Display Label|default".

@@ -215,10 +215,16 @@ _browser_profiles_ubuntu() {
         local display_name
         display_name=$(printf '%s' "$profile" | sed 's/.*/\L\u&/')
 
-        sed -i "s|/snap/bin/firefox -new-window|& -p $profile|g"         "$desktop_file"
-        sed -i "s|/snap/bin/firefox -private-window|& -p $profile|g"     "$desktop_file"
-        sed -i "s|\(/snap/bin/firefox\) %u$|\1 -p $profile %u|g"         "$desktop_file"
-        sed -i "s|Name=Firefox Web Browser|Name=$display_name Browser|g" "$desktop_file"
+        # Escape characters special in a sed replacement string (&, |, \) so
+        # user-supplied profile names cannot corrupt the substitutions below.
+        local safe_profile safe_display_name
+        safe_profile=$(printf '%s' "$profile" | sed 's/[&|\\]/\\&/g')
+        safe_display_name=$(printf '%s' "$display_name" | sed 's/[&|\\]/\\&/g')
+
+        sed -i "s|/snap/bin/firefox -new-window|& -p $safe_profile|g"         "$desktop_file"
+        sed -i "s|/snap/bin/firefox -private-window|& -p $safe_profile|g"     "$desktop_file"
+        sed -i "s|\(/snap/bin/firefox\) %u$|\1 -p $safe_profile %u|g"         "$desktop_file"
+        sed -i "s|Name=Firefox Web Browser|Name=$safe_display_name Browser|g" "$desktop_file"
 
     done
 

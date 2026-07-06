@@ -51,9 +51,10 @@ run_rpmfusion() {
     success_message "RPM Fusion repositories enabled."
 
     # -- ffmpeg swap -----------------------------------------------------------
-    # Idempotent: if ffmpeg is already installed, ffmpeg-free has already been
-    # swapped out — running dnf swap again would fail. Skip in that case.
-    if ! rpm -q ffmpeg &>/dev/null; then
+    # Idempotent: skip if ffmpeg-free is no longer present — the swap has
+    # already run. Checking for ffmpeg-free (the package being replaced) is the
+    # correct predicate; ffmpeg may exist independently via other means.
+    if rpm -q ffmpeg-free &>/dev/null; then
         run_with_spinner "Swapping ffmpeg-free for ffmpeg..." \
             sudo dnf swap -y ffmpeg-free ffmpeg --allowerasing
 
