@@ -24,7 +24,6 @@
 _BINARIES=(
     "yt-dlp        https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp"
     "git_info      https://github.com/AswinGopal/git_info/releases/latest/download/git_info"
-    "ytdownloader  https://github.com/AswinGopal/ytdownloader/releases/latest/download/ytdownloader"
 )
 
 # ------------------------------------------------------------------------------
