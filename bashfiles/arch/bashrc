@@ -1,0 +1,121 @@
+# ~/.bashrc: executed by bash(1) for non-login shells.
+
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# don't put duplicate lines or lines starting with space in the history
+HISTCONTROL=ignoreboth
+
+# append to the history file, don't overwrite it
+shopt -s histappend
+
+# for setting history length
+HISTSIZE=1000
+HISTFILESIZE=2000
+
+# check the window size after each command
+shopt -s checkwinsize
+
+# enable recursive globbing with **
+#shopt -s globstar
+
+# make less more friendly for non-text input files
+[ -x /usr/bin/lesspipe.sh ] && eval "$(SHELL=/bin/sh lesspipe.sh)"
+
+# set a fancy prompt (color if available)
+case "$TERM" in
+    xterm-color|*-256color) color_prompt=yes;;
+esac
+
+# Uncomment to force color prompt
+# force_color_prompt=yes
+
+if [ -n "$force_color_prompt" ]; then
+    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+        color_prompt=yes
+    else
+        color_prompt=
+    fi
+fi
+
+if [ "$color_prompt" = yes ]; then
+    # Use an Arch icon if available (Nerd Fonts required)
+    OS_ICON=\uf303  # Nerd Font Arch icon
+    PS1='\[\033[01;34m\]$OS_ICON \[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+else
+    PS1='\u@\h:\w\$ '
+fi
+unset color_prompt force_color_prompt
+
+# Set terminal title if xterm or rxvt
+case "$TERM" in
+xterm*|rxvt*)
+    PS1="\[\e]0;\u@\h: \w\a\]$PS1"
+    ;;
+*)
+    ;;
+esac
+
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias dir='dir --color=auto'
+    alias vdir='vdir --color=auto'
+
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# some more ls aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+
+# alert for long running commands
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
+# Load additional aliases
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
+# enable bash completion
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  fi
+fi
+
+# Add user bin to PATH
+#export PATH="$HOME/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
+
+# Source optional scripts if available
+#[ -f "$HOME/.git_functions.sh" ] && source "$HOME/.git_functions.sh"
+#[ -f /usr/share/autojump/autojump.sh ] && . /usr/share/autojump/autojump.sh
+
+set_lock() {
+    [[ -w "$PWD" ]] || echo -e "\[\e[48;2;76;86;106m\]  \[\e[0m\]"
+}
+
+venv_info() {
+    [[ -n "$VIRTUAL_ENV" ]] && echo -e " \[\e[38;2;255;212;59m\]󰌠 ($(basename "$VIRTUAL_ENV"))"
+}
+
+update_prompt() {
+    local user_seg="\[\e[38;2;98;114;164m\]\[\e[38;2;248;248;242;48;2;98;114;164m\]  \u "
+    local dir_seg="\[\e[38;2;98;114;164;48;2;67;76;94m\]\[\e[37m\] \w "
+    local lock_seg="\[\e[38;2;67;76;94;48;2;76;86;106m\]\e[37m\]$(venv_info)$(set_lock)"
+    local git_seg="\[\e[38;2;76;86;106;48;2;6;150;154m\]$(git_info)"
+    local time_seg="\[\e[38;2;6;150;154;48;2;98;114;164m\]\e[37m\] \@ "
+    local end="\[\e[0m\]\[\e[38;2;98;114;164m\]"
+
+    PS1="\n \[\e[0;37m\]╭─$user_seg$dir_seg$lock_seg$git_seg$time_seg$end\n \[\e[0;37m\]│\n \[\e[0;37m\]╰ \[\e[1;36m\]\$ \[\e[0m\]"
+}
+
+PROMPT_COMMAND=update_prompt

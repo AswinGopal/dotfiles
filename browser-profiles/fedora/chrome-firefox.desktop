@@ -1,0 +1,28 @@
+[Desktop Entry]
+Version=1.0
+Name=Chrome
+GenericName=Chrome Browser
+Comment=Browse the Web
+Exec=firefox -P chrome -no-remote --name firefoxchrome
+Icon=chrome-profile
+Terminal=false
+Type=Application
+StartupWMClass=firefoxchrome
+MimeType=text/html;text/xml;application/xhtml+xml;application/vnd.mozilla.xul+xml;text/mml;x-scheme-handler/http;x-scheme-handler/https;
+StartupNotify=true
+Categories=Network;WebBrowser;
+Keywords=web;browser;internet;
+Actions=new-window;new-private-window;profile-manager-window;
+X-Desktop-File-Install-Version=0.28
+
+[Desktop Action new-window]
+Name=Open a New Window
+Exec=firefox -P chrome -no-remote
+
+[Desktop Action new-private-window]
+Name=Open a New Private Window
+Exec=firefox -P chrome -no-remote --private-window
+
+[Desktop Action profile-manager-window]
+Name=Open the Profile Manager
+Exec=firefox --ProfileManager

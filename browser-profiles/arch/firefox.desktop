@@ -1,0 +1,36 @@
+[Desktop Entry]
+Actions=new-window;new-private-window;open-profile-manager;
+Categories=GNOME;GTK;Network;WebBrowser;
+Comment=Browse the World Wide Web
+DBusActivatable=false
+Exec=/usr/lib/firefox/firefox --new-instance -P personal
+GenericName=Web Browser
+Icon=firefox
+Keywords=Internet;WWW;Browser;Web;Explorer;
+MimeType=application/json;application/pdf;application/rdf+xml;application/rss+xml;application/x-xpinstall;application/xhtml+xml;application/xml;audio/flac;audio/ogg;audio/webm;image/avif;image/gif;image/jpeg;image/png;image/svg+xml;image/webp;text/html;text/xml;video/ogg;video/webm;x-scheme-handler/chrome;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/mailto;
+Name=Firefox
+NoDisplay=false
+Path=
+PrefersNonDefaultGPU=false
+StartupNotify=true
+StartupWMClass=firefox
+Terminal=false
+TerminalOptions=
+Type=Application
+Version=1.0
+X-GNOME-FullName=Firefox Web Browser
+X-KDE-SubstituteUID=false
+X-KDE-Username=
+X-MultipleArgs=false
+
+[Desktop Action new-private-window]
+Exec=/usr/lib/firefox/firefox --new-instance --private-window -P personal
+Name=New Private Window
+
+[Desktop Action new-window]
+Exec=/usr/lib/firefox/firefox --new-instance --new-window -P personal
+Name=New Window
+
+[Desktop Action open-profile-manager]
+Exec=/usr/lib/firefox/firefox --new-instance --ProfileManager
+Name=Open Profile Manager

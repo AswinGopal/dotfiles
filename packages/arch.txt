@@ -1,0 +1,15 @@
+mpv
+intel-gpu-tools
+gufw
+i2c-tools
+psensor
+dosfstools
+mtools
+ntfs-3g
+gparted
+jpegoptim
+sbsigntools
+efitools
+tree
+perl-image-exiftool
+zoxide

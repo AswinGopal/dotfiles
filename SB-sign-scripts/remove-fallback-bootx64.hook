@@ -1,0 +1,10 @@
+[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+Target = usr/lib/systemd/boot/efi/systemd-bootx64.efi
+
+[Action]
+Description = Remove fallback BOOTX64.EFI after systemd-boot install/update
+When = PostTransaction
+Exec = /usr/bin/rm -f /boot/EFI/BOOT/BOOTX64.EFI

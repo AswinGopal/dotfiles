@@ -2,11 +2,14 @@
 
 # modules/binaries.sh
 #
-# Download yt-dlp, git_info, and ytdownloader to $HOME/.local/bin.
+# Download binaries to $HOME/.local/bin.
 #
-# yt-dlp        — critical; the mpv module depends on it. Module fails if this fails.
-# git_info      — best-effort; failure is logged but does not fail the module.
-# ytdownloader  — best-effort; failure is logged but does not fail the module.
+# To add a binary: append a "name url" entry to _BINARIES. The binary is
+# installed as $HOME/.local/bin/<name>. Names and URLs must not contain spaces.
+#
+# All downloads are attempted regardless of individual failures. The module
+# returns 1 if any download failed so the user is alerted via show_summary,
+# but execution continues to ensure every binary gets a chance to install.
 #
 # Idempotency is provided by download_binary() in lib/utils.sh — each binary
 # is skipped silently if it already exists and is executable.
@@ -16,6 +19,13 @@
 #              gum spin subprocess.
 #
 # Public interface: run_binaries()
+
+# To add a binary: one line here. Format: "name url"
+_BINARIES=(
+    "yt-dlp        https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp"
+    "git_info      https://github.com/AswinGopal/git_info/releases/latest/download/git_info"
+    "ytdownloader  https://github.com/AswinGopal/ytdownloader/releases/latest/download/ytdownloader"
+)
 
 # ------------------------------------------------------------------------------
 # run_binaries
@@ -33,38 +43,23 @@ run_binaries() {
     export -f download_binary
     export -f log_write
 
-    # -- yt-dlp (critical) -----------------------------------------------------
-    run_with_spinner "Downloading yt-dlp..." \
-        bash -c 'download_binary "$@"' _ \
-        "yt-dlp" \
-        "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp" \
-        "$bin_dir/yt-dlp"
+    local failed=0
+    local entry name url
 
-    if [[ $? -ne 0 ]]; then
-        log_error "Failed to download yt-dlp."
+    for entry in "${_BINARIES[@]}"; do
+        read -r name url <<< "$entry"
+
+        run_with_spinner "Downloading $name..." \
+            bash -c 'download_binary "$@"' _ "$name" "$url" "$bin_dir/$name"
+
+        if [[ $? -ne 0 ]]; then
+            log_error "Failed to download $name."
+            failed=1
+        fi
+    done
+
+    if [[ $failed -ne 0 ]]; then
         return 1
-    fi
-
-    # -- git_info (best-effort) ------------------------------------------------
-    run_with_spinner "Downloading git_info..." \
-        bash -c 'download_binary "$@"' _ \
-        "git_info" \
-        "https://github.com/AswinGopal/git_info/releases/latest/download/git_info" \
-        "$bin_dir/git_info"
-
-    if [[ $? -ne 0 ]]; then
-        log_error "Failed to download git_info."
-    fi
-
-    # -- ytdownloader (best-effort) --------------------------------------------
-    run_with_spinner "Downloading ytdownloader..." \
-        bash -c 'download_binary "$@"' _ \
-        "ytdownloader" \
-        "https://github.com/AswinGopal/ytdownloader/releases/latest/download/ytdownloader" \
-        "$bin_dir/ytdownloader"
-
-    if [[ $? -ne 0 ]]; then
-        log_error "Failed to download ytdownloader."
     fi
 
     success_message "Binaries installed."

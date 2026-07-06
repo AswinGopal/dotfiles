@@ -1,0 +1,12 @@
+mpv
+gnome-tweaks
+virtualenv
+intel-media-va-driver-non-free
+intel-gpu-tools
+gufw
+lm-sensors
+psensor
+zoxide
+jpegoptim
+tree
+fzf

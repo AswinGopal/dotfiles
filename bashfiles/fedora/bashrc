@@ -1,0 +1,50 @@
+# .bashrc
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+fi
+
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
+# User specific environment
+if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]; then
+    PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+fi
+export PATH
+
+# Uncomment the following line if you don't like systemctl's auto-paging feature:
+# export SYSTEMD_PAGER=
+
+# User specific aliases and functions
+if [ -d ~/.bashrc.d ]; then
+    for rc in ~/.bashrc.d/*; do
+        if [ -f "$rc" ]; then
+            . "$rc"
+        fi
+    done
+fi
+unset rc
+
+set_lock() {
+    [[ -w "$PWD" ]] || echo -e "\[\e[48;2;76;86;106m\]  \[\e[0m\]"
+}
+
+venv_info() {
+    [[ -n "$VIRTUAL_ENV" ]] && echo -e " \[\e[38;2;255;212;59m\]󰌠 ($(basename "$VIRTUAL_ENV"))"
+}
+
+update_prompt() {
+    local user_seg="\[\e[38;2;98;114;164m\]\[\e[38;2;248;248;242;48;2;98;114;164m\]  \u "
+    local dir_seg="\[\e[38;2;98;114;164;48;2;67;76;94m\]\[\e[37m\] \w "
+    local lock_seg="\[\e[38;2;67;76;94;48;2;76;86;106m\]\e[37m\]$(venv_info)$(set_lock)"
+    local git_seg="\[\e[38;2;76;86;106;48;2;6;150;154m\]$(git_info)"
+    local time_seg="\[\e[38;2;6;150;154;48;2;98;114;164m\]\e[37m\] \@ "
+    local end="\[\e[0m\]\[\e[38;2;98;114;164m\]"
+
+    PS1="\n \[\e[0;37m\]╭─$user_seg$dir_seg$lock_seg$git_seg$time_seg$end\n \[\e[0;37m\]│\n \[\e[0;37m\]╰ \[\e[1;36m\]\$ \[\e[0m\]"
+}
+
+PROMPT_COMMAND=update_prompt

@@ -1,0 +1,4 @@
+alias trim='sudo fstrim -va'
+alias usage='sudo intel_gpu_top'
+alias fedup='sudo dnf upgrade'
+alias delete='shred -uz -n100'
