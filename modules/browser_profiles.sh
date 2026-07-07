@@ -196,10 +196,27 @@ _browser_profiles_ubuntu() {
                 cp "$userjs_tmp" "$firefox_profile_dir/$profile_dir/user.js" \
                     || log_error "Failed to install user.js to profile: $profile"
 
-                if [[ -f "$src_dir/user-overrides.js" ]]; then
-                    cp "$src_dir/user-overrides.js" "$firefox_profile_dir/$profile_dir/" \
-                        || log_error "Failed to copy user-overrides.js to profile: $profile"
-                fi
+                local overrides_choice
+                overrides_choice=$("$GUM" choose \
+                    --header="Select user-overrides for profile '$profile'" \
+                    "user-overrides.js" \
+                    "user-overrides-erase_all.js" \
+                    "Skip")
+
+                case "$overrides_choice" in
+                    "user-overrides.js"|"user-overrides-erase_all.js")
+                        local overrides_src="$REPO_ROOT/browser-profiles/$overrides_choice"
+                        if [[ -f "$overrides_src" ]]; then
+                            cp "$overrides_src" "$firefox_profile_dir/$profile_dir/" \
+                                || log_error "Failed to copy $overrides_choice to profile: $profile"
+                        else
+                            log_error "user-overrides file not found: $overrides_src"
+                        fi
+                        ;;
+                    *)
+                        # "Skip" or Ctrl-C / empty — no overrides installed for this profile
+                        ;;
+                esac
             fi
         fi
 
