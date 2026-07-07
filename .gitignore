@@ -9,6 +9,8 @@
 !/install.sh
 !SB-sign-scripts/
 !SB-sign-scripts/**
+!applications/
+!applications/**
 !bashfiles/
 !bashfiles/**
 !browser-profiles/

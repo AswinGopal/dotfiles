@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=ytdownloader
+Exec=ytdownloader-linux
+Icon=ytdownloader
+Type=Application
+Categories=AudioVideo;Network;
