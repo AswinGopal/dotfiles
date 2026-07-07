@@ -41,6 +41,7 @@ MODULES=(
     "shell_tools|Shell tools|on"
     "binaries|Binaries|on"
     "fonts|Fonts|on"
+    "deno|Deno|on"
     "mpv|MPV|on"
     "browser_profiles|Browser profiles|on"
     "ubuntu_settings|GNOME Settings|on"
