@@ -17,13 +17,12 @@
 # OS-specific .desktop files are sourced from $REPO_ROOT/browser-profiles/$OS_ID/.
 # Icons installed user-local on all three OSes. No sudo required.
 #
-# Per-profile user.js overrides — mapping is OS-independent (profile_js below),
-# sourced from $REPO_ROOT/browser-profiles/*.js. Firefox only reads a file named
-# exactly "user.js" inside a profile's own versioned directory, so the source
-# filename is renamed on copy. A profile with no entry in the map (chrome) is
-# left with Firefox's default prefs. The versioned profile directory name is
-# not known until firefox -CreateProfile has run, so resolution happens inside
-# the same loop, immediately after each profile is created.
+# Per-profile user.js override files — mapping is OS-independent (profile_js
+# below), sourced from $REPO_ROOT/browser-profiles/*.js and copied as-is (no
+# rename) into the profile's own versioned directory. A profile with no entry
+# in the map (chrome) gets no override file. The versioned profile directory
+# name is not known until firefox -CreateProfile has run, so resolution
+# happens inside the same loop, immediately after each profile is created.
 #
 # Reads:
 #   REPO_ROOT — set by install.sh
@@ -92,8 +91,8 @@ run_browser_profiles() {
             if [[ -z "$profile_path" ]]; then
                 log_error "Could not resolve profile directory for: $profile"
                 failed=1
-            elif ! cp "$icon_src/${profile_js[$profile]}" "$profile_path/user.js"; then
-                log_error "Failed to copy user.js for profile: $profile"
+            elif ! cp "$icon_src/${profile_js[$profile]}" "$profile_path/"; then
+                log_error "Failed to copy ${profile_js[$profile]} for profile: $profile"
                 failed=1
             fi
         fi
