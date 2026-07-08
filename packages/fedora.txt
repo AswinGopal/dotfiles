@@ -3,7 +3,6 @@ uv
 fzf
 mpv
 gnome-tweaks
-intel-media-driver
 jpegoptim
 tree
 igt-gpu-tools
