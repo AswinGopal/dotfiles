@@ -21,7 +21,7 @@
 # stdout suppressed; stderr passes through for error visibility.
 # ------------------------------------------------------------------------------
 pkg_install() {
-    if ! sudo apt-get install -y "$@" > /dev/null; then
+    if ! sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y "$@" > /dev/null; then
         log_write "ERROR" "apt-get failed to install: $*"
         printf 'Error: apt-get failed to install: %s\n' "$*" >&2
         return 1
