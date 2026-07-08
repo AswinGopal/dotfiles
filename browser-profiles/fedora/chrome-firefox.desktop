@@ -4,7 +4,7 @@ Name=Chrome
 GenericName=Chrome Browser
 Comment=Browse the Web
 Exec=firefox -P chrome -no-remote --name firefoxchrome
-Icon=chrome-profile
+Icon=chrome-firefox
 Terminal=false
 Type=Application
 StartupWMClass=firefoxchrome
@@ -17,11 +17,11 @@ X-Desktop-File-Install-Version=0.28
 
 [Desktop Action new-window]
 Name=Open a New Window
-Exec=firefox -P chrome -no-remote
+Exec=firefox -P chrome -no-remote --name firefoxchrome
 
 [Desktop Action new-private-window]
 Name=Open a New Private Window
-Exec=firefox -P chrome -no-remote --private-window
+Exec=firefox -P chrome -no-remote --private-window --name firefoxchrome
 
 [Desktop Action profile-manager-window]
 Name=Open the Profile Manager

@@ -1,11 +1,11 @@
 [Desktop Entry]
 Actions=new-window;new-private-window;open-profile-manager;
-Categories=GNOME;GTK;Network;WebBrowser;
+Categories=GNOME;GTK;Netbrave;WebBrowser;
 Comment=Brave Browser
 DBusActivatable=false
-Exec=/usr/lib/firefox/firefox -P work --name firefoxbrave
+Exec=/usr/lib/firefox/firefox -P brave -no-remote --name firefoxbrave
 GenericName=Web Browser
-Icon=brave
+Icon=brave-firefox
 Keywords=Internet;WWW;Browser;Web;Explorer;
 MimeType=application/json;application/pdf;application/rdf+xml;application/rss+xml;application/x-xpinstall;application/xhtml+xml;application/xml;audio/flac;audio/ogg;audio/webm;image/avif;image/gif;image/jpeg;image/png;image/svg+xml;image/webp;text/html;text/xml;video/ogg;video/webm;x-scheme-handler/chrome;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/mailto;
 Name=Brave
@@ -24,12 +24,12 @@ X-KDE-Username=
 X-MultipleArgs=false
 
 [Desktop Action new-private-window]
-Exec=/usr/lib/firefox/firefox --private-window -P work --name firefoxbrave %u
+Exec=/usr/lib/firefox/firefox --private-window -P brave -no-remote --name firefoxbrave %u
 Name=New Private Window
 StartupWMClass=firefoxbrave
 
 [Desktop Action new-window]
-Exec=/usr/lib/firefox/firefox --new-window -P work --name firefoxbrave
+Exec=/usr/lib/firefox/firefox --new-window -P brave -no-remote --name firefoxbrave
 Name=New Window
 StartupWMClass=firefoxbrave
 

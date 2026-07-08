@@ -1,19 +1,19 @@
 [Desktop Entry]
 Actions=new-window;new-private-window;open-profile-manager;
-Categories=GNOME;GTK;Network;WebBrowser;
-Comment=Browse the World Wide Web
+Categories=GNOME;GTK;Netchrome;WebBrowser;
+Comment=Brave Browser
 DBusActivatable=false
-Exec=/usr/lib/firefox/firefox --new-instance -P personal
+Exec=/usr/lib/firefox/firefox -P chrome -no-remote --name firefoxchrome
 GenericName=Web Browser
-Icon=firefox
+Icon=chrome-firefox
 Keywords=Internet;WWW;Browser;Web;Explorer;
 MimeType=application/json;application/pdf;application/rdf+xml;application/rss+xml;application/x-xpinstall;application/xhtml+xml;application/xml;audio/flac;audio/ogg;audio/webm;image/avif;image/gif;image/jpeg;image/png;image/svg+xml;image/webp;text/html;text/xml;video/ogg;video/webm;x-scheme-handler/chrome;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/mailto;
-Name=Firefox
+Name=Chrome
 NoDisplay=false
 Path=
 PrefersNonDefaultGPU=false
 StartupNotify=true
-StartupWMClass=firefox
+StartupWMClass=firefoxchrome
 Terminal=false
 TerminalOptions=
 Type=Application
@@ -24,13 +24,15 @@ X-KDE-Username=
 X-MultipleArgs=false
 
 [Desktop Action new-private-window]
-Exec=/usr/lib/firefox/firefox --new-instance --private-window -P personal
+Exec=/usr/lib/firefox/firefox --private-window -P chrome -no-remote --name firefoxchrome
 Name=New Private Window
+StartupWMClass=firefoxchrome
 
 [Desktop Action new-window]
-Exec=/usr/lib/firefox/firefox --new-instance --new-window -P personal
+Exec=/usr/lib/firefox/firefox --new-window -P chrome -no-remote --name firefoxchrome
 Name=New Window
+StartupWMClass=firefoxchrome
 
 [Desktop Action open-profile-manager]
-Exec=/usr/lib/firefox/firefox --new-instance --ProfileManager
+Exec=/usr/lib/firefox/firefox --ProfileManager
 Name=Open Profile Manager

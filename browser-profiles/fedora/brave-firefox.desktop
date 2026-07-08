@@ -4,7 +4,7 @@ Name=Brave
 GenericName=Brave Browser
 Comment=Browse the Web
 Exec=firefox -P brave -no-remote --name firefoxbrave %u
-Icon=brave-profile
+Icon=brave-firefox
 Terminal=false
 Type=Application
 StartupWMClass=firefoxbrave
@@ -17,11 +17,11 @@ X-Desktop-File-Install-Version=0.28
 
 [Desktop Action new-window]
 Name=Open a New Window
-Exec=firefox -P brave -no-remote
+Exec=firefox -P brave -no-remote --name firefoxbrave
 
 [Desktop Action new-private-window]
 Name=Open a New Private Window
-Exec=firefox -P brave -no-remote --private-window
+Exec=firefox -P brave -no-remote --private-window --name firefoxbrave
 
 [Desktop Action profile-manager-window]
 Name=Open the Profile Manager
