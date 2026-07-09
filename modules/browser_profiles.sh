@@ -204,6 +204,11 @@ run_browser_profiles() {
         gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1
     fi
 
+    # -- Refresh desktop file / MIME association cache --------------------------
+    if command -v update-desktop-database &>/dev/null; then
+        update-desktop-database "$desktop_dir" >/dev/null 2>&1
+    fi
+
     [[ $failed -ne 0 ]] && return 1
 
     success_message "Browser profiles configured."
