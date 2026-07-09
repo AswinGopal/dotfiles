@@ -45,5 +45,5 @@ MODULES=(
     "deno|Deno|on"
     "mpv|MPV|on"
     "browser_profiles|Browser profiles|on"
-    "ubuntu_settings|GNOME Settings|on"
+    "gnome_settings|GNOME Settings|on"
 )

@@ -45,5 +45,6 @@ MODULES=(
     "fonts|Fonts|on"
     "mpv|MPV|on"
     "browser_profiles|Browser profiles|on"
+    "gnome_settings|GNOME Settings|on"
     "secure_boot|Secure Boot scripts|off"
 )

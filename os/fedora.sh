@@ -51,4 +51,5 @@ MODULES=(
     "mpv|MPV|on"
     "browser_profiles|Browser profiles|on"
     "firewall|Firewall|on"
+    "gnome_settings|GNOME Settings|on"
 )
