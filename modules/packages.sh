@@ -2,7 +2,8 @@
 
 # modules/packages.sh
 #
-# Install all packages listed in packages/$OS_ID.txt via pkg_install().
+# Install all packages listed in packages/$OS_ID.txt via pkg_install(),
+# one package at a time.
 #
 # Reads:
 #   REPO_ROOT — set by install.sh (git rev-parse --show-toplevel)
@@ -16,12 +17,13 @@
 # run_packages
 #
 # Read packages/$OS_ID.txt line by line, skipping blank lines and comments.
-# Install all collected packages in a single pkg_install() call wrapped in a
-# spinner.
+# All packages are attempted regardless of individual failures. The module
+# returns 1 if any package failed to install so the user is alerted via
+# show_summary, but execution continues to ensure every package gets a
+# chance to install.
 #
 # pkg_install() and log_write() are bash functions. gum spin runs the wrapped
-# command in a subprocess, so both must be exported before the spinner call.
-# The array is passed through bash -c via positional parameters.
+# command in a subprocess, so both must be exported before the spinner calls.
 # ------------------------------------------------------------------------------
 run_packages() {
     local pkg_file="$REPO_ROOT/packages/$OS_ID.txt"
@@ -48,11 +50,20 @@ run_packages() {
     export -f pkg_install
     export -f log_write
 
-    run_with_spinner "Installing packages..." \
-        bash -c 'pkg_install "$@"' _ "${packages[@]}"
+    local failed=0
+    local package
 
-    if [[ $? -ne 0 ]]; then
-        log_error "Package installation failed."
+    for package in "${packages[@]}"; do
+        run_with_spinner "Installing $package..." \
+            bash -c 'pkg_install "$@"' _ "$package"
+
+        if [[ $? -ne 0 ]]; then
+            log_error "Failed to install $package."
+            failed=1
+        fi
+    done
+
+    if [[ $failed -ne 0 ]]; then
         return 1
     fi
 
