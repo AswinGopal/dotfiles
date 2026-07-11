@@ -23,7 +23,7 @@
 #
 # Public interface: run_fonts()
 
-_FONT_INSTALL_PATH="/usr/local/share/fonts"
+_FONT_INSTALL_PATH="$HOME/.local/share/fonts"
 _NERD_FONTS_API="https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest"
 
 # Add fonts here — zip filenames only. Name is derived by stripping .zip.
