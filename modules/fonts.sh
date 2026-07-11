@@ -1,9 +1,16 @@
 #!/bin/bash
 
 # modules/fonts.sh
-#
-# Download and install Meslo and FiraCode Nerd Fonts from the latest
-# ryanoasis/nerd-fonts GitHub release into /usr/local/share/fonts/.
+
+# User-local install — no sudo required anywhere in this module. A font
+# already present system-wide (e.g. from a prior sudo-based install, or a
+# distro font package) is still detected and skipped via fc-list: anyone
+# with root access to write a font into a system directory has by
+# definition already had the ability to run sudo fc-cache -f, so the
+# system-wide fontconfig cache is never stale on account of anything this
+# module needs to account for. A plain, non-sudo fc-cache -f can read that
+# cache — reading is unprivileged; only rebuilding a directory's cache
+# requires ownership of it — so no sudo is needed here to detect it.
 #
 # To add a font: append its zip filename to the FONTS array. The font name
 # is derived automatically by stripping the .zip suffix — no second array
@@ -11,11 +18,23 @@
 #
 # Flow:
 #   1. Create a private temp directory (cleaned up on any return via trap).
-#   2. Fetch the latest release JSON from the GitHub API once.
-#   3. For each font: resolve URL from JSON, download (spinner), unzip, copy.
-#   4. Run sudo fc-cache -f once after all fonts are installed.
+#   2. Run fc-cache -f once, before anything else, so the pre-pass below is
+#      judged against accurate, current cache state.
+#   3. Pre-pass: check every font in FONTS against fc-list. Fonts already
+#      visible to fontconfig (user or system-wide) are skipped; anything
+#      else is collected into a to-install list. No network call yet.
+#   4. If nothing needs installing, stop here — the GitHub API is never
+#      contacted when every font is already present.
+#   5. Otherwise, fetch the latest release JSON from the GitHub API once —
+#      shared across every font still in the to-install list.
+#   6. For each font in the to-install list: resolve its URL from the JSON,
+#      download (spinner), unzip, copy.
+#   7. Run fc-cache -f once more, so newly installed fonts are live
+#      immediately and next run's pre-pass stays accurate.
 #
-# Idempotent: re-running re-downloads and re-copies. Result is identical.
+# Idempotent: a font already visible to fontconfig (user or system-wide) is
+# skipped entirely — no API call, no download, no re-copy. The GitHub API is
+# only contacted when at least one font actually needs installing.
 #
 # Reads:
 #   LOG_FILE — must be exported by install.sh; used by log_write in the
@@ -61,9 +80,9 @@ _fonts_install() {
         return 1
     fi
 
-    sudo mkdir -p "$_FONT_INSTALL_PATH"
+    mkdir -p "$_FONT_INSTALL_PATH"
 
-    if ! sudo cp -r "$extract_path" "$_FONT_INSTALL_PATH/"; then
+    if ! cp -r "$extract_path" "$_FONT_INSTALL_PATH/"; then
         log_error "Failed to install $font_name to $_FONT_INSTALL_PATH."
         return 1
     fi
@@ -82,15 +101,39 @@ run_fonts() {
     # shellcheck disable=SC2064
     trap "rm -rf '$tmp_dir'" RETURN
 
-    # Fetch release JSON once — all fonts resolve their URLs from this payload.
+    # Establish accurate cache state before any skip checks run below —
+    # correctness of those checks depends on this running first.
+    if ! fc-cache -f; then
+        log_error "Failed to refresh font cache."
+        return 1
+    fi
+
+    # -- Pre-pass: determine which fonts actually need installing -------------
+    # Done before any network call — a font already visible to fontconfig
+    # (user or system-wide) has no reason to touch the GitHub API at all.
+    local -a to_install=()
+    local font_file
+    for font_file in "${_FONTS[@]}"; do
+        if ! fc-list | grep -qi "${font_file%.zip}"; then
+            to_install+=("$font_file")
+        fi
+    done
+
+    # Nothing to do — skip the API call entirely.
+    if [[ ${#to_install[@]} -eq 0 ]]; then
+        success_message "Fonts already installed."
+        return 0
+    fi
+
+    # Fetch release JSON once — shared across every font that needs installing.
     local release_json
     release_json=$(curl -fsSL "$_NERD_FONTS_API") || {
         log_error "Failed to fetch nerd-fonts release info from GitHub API."
         return 1
     }
 
-    local font_file url
-    for font_file in "${_FONTS[@]}"; do
+    local url
+    for font_file in "${to_install[@]}"; do
         url=$(printf '%s' "$release_json" \
             | jq -r ".assets[] | select(.name == \"$font_file\") | .browser_download_url")
 
@@ -102,7 +145,7 @@ run_fonts() {
         _fonts_install "$font_file" "$url" "$tmp_dir" || return 1
     done
 
-    if ! sudo fc-cache -f; then
+    if ! fc-cache -f; then
         log_error "Failed to update font cache."
         return 1
     fi

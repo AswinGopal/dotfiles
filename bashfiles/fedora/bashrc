@@ -29,11 +29,11 @@ fi
 unset rc
 
 # Powerline segment colors
-user_color="52;68;120"
-dir_color="58;92;168"
-lock_color="84;96;196"
-git_color="122;92;196"
-time_color="150;80;170"
+user_color="98;114;164" #"52;68;120" 
+dir_color="67;76;94"    #"58;92;168" 
+lock_color="76;86;106"  #"84;96;196" 
+git_color="6;150;154"   #"122;92;196" 
+time_color="98;114;164" #"150;80;170" 
 
 VENV_FG="255;212;59"
 
