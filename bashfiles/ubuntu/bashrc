@@ -126,11 +126,11 @@ export PATH="$HOME/.local/bin:$PATH"
 [ -f /usr/share/autojump/autojump.sh ] && . /usr/share/autojump/autojump.sh
 
 # Powerline segment colors
-USER="98;114;164"
-DIR="67;76;94"
-LOCK="76;86;106"
-GIT="6;150;154"
-TIME="98;114;164"
+user_color="52;68;120"
+dir_color="58;92;168"
+lock_color="84;96;196"
+git_color="122;92;196"
+time_color="150;80;170"
 
 VENV_FG="255;212;59"
 
@@ -143,11 +143,13 @@ venv_info() {
 }
 
 update_prompt() {
-    local user_seg="\[\e[38;2;${USER}m\]\[\e[37;48;2;${USER}m\]  \u \[\e[38;2;${USER};48;2;${DIR}m\]"
-    local dir_seg="\[\e[37;48;2;${DIR}m\] \w \[\e[38;2;${DIR};48;2;${LOCK}m\]"
-    local lock_seg="\[\e[37;48;2;${LOCK}m\]$(venv_info)$(set_lock)\[\e[38;2;${LOCK};48;2;${GIT}m\]"
-    local git_seg="\[\e[37;48;2;${GIT}m\]$(git_info)\[\e[38;2;${GIT};48;2;${TIME}m\]"
-    local time_seg="\[\e[37;48;2;${TIME}m\] \@ \[\e[0;38;2;${TIME}m\]"
+    local user_seg="\[\e[38;2;${user_color}m\]\[\e[37;48;2;${user_color}m\]  \u \[\e[38;2;${user_color};48;2;${dir_color}m\]"
+    local dir_seg="\[\e[37;48;2;${dir_color}m\] \w \[\e[38;2;${dir_color};48;2;${lock_color}m\]"
+    local lock_seg="\[\e[37;48;2;${lock_color}m\]$(venv_info)$(set_lock)\[\e[38;2;${lock_color};48;2;${git_color}m\]"
+    local git_seg="\[\e[37;48;2;${git_color}m\]$(git_info)\[\e[38;2;${git_color};48;2;${time_color}m\]"
+    local time_seg="\[\e[37;48;2;${time_color}m\] \@ \[\e[0;38;2;${time_color}m\]"
 
     PS1="\n \[\e[0;37m\]╭─$user_seg$dir_seg$lock_seg$git_seg$time_seg\n \[\e[0;37m\]│\n \[\e[0;37m\]╰ \[\e[1;36m\]\$ \[\e[0m\]"
 }
+
+PROMPT_COMMAND=update_prompt
