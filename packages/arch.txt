@@ -12,4 +12,3 @@ sbsigntools
 efitools
 tree
 perl-image-exiftool
-zoxide

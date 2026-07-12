@@ -6,7 +6,5 @@ intel-gpu-tools
 gufw
 lm-sensors
 psensor
-zoxide
 jpegoptim
 tree
-fzf
