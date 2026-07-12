@@ -1,0 +1,28 @@
+# Powerline segment colors
+user_color="52;68;120"  #"98;114;164"
+dir_color="58;92;168"   #"67;76;94"
+lock_color="84;96;196"  #"76;86;106"
+git_color="122;92;196"  #"6;150;154"
+time_color="150;80;170" #"98;114;164"
+
+venv_color="255;212;59"
+
+set_lock() {
+    [[ -w "$PWD" ]] || echo -e "  "
+}
+
+venv_info() {
+    [[ -n "$VIRTUAL_ENV" ]] && echo -e "\[\e[38;2;${venv_color}m\] 󰌠 ($(basename "$VIRTUAL_ENV"))"
+}
+
+update_prompt() {
+    local user_seg="\[\e[38;2;${user_color}m\]\[\e[37;48;2;${user_color}m\]  \u \[\e[38;2;${user_color};48;2;${dir_color}m\]"
+    local dir_seg="\[\e[37;48;2;${dir_color}m\] \w \[\e[38;2;${dir_color};48;2;${lock_color}m\]"
+    local lock_seg="\[\e[37;48;2;${lock_color}m\]$(venv_info)$(set_lock)\[\e[38;2;${lock_color};48;2;${git_color}m\]"
+    local git_seg="\[\e[37;48;2;${git_color}m\]$(git_info)\[\e[38;2;${git_color};48;2;${time_color}m\]"
+    local time_seg="\[\e[37;48;2;${time_color}m\] \@ \[\e[0;38;2;${time_color}m\]"
+
+    PS1="\n \[\e[0;37m\]╭─$user_seg$dir_seg$lock_seg$git_seg$time_seg\n \[\e[0;37m\]│\n \[\e[0;37m\]╰ \[\e[1;36m\]\$ \[\e[0m\]"
+}
+
+PROMPT_COMMAND=update_prompt

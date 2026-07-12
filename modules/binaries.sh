@@ -2,17 +2,12 @@
 
 # modules/binaries.sh
 #
-# Download binaries to $HOME/.local/bin.
+# Downloads binaries to $HOME/.local/bin. To add one, append a "name url"
+# entry to _BINARIES.
 #
-# To add a binary: append a "name url" entry to _BINARIES. The binary is
-# installed as $HOME/.local/bin/<name>. Names and URLs must not contain spaces.
-#
-# All downloads are attempted regardless of individual failures. The module
-# returns 1 if any download failed so the user is alerted via show_summary,
-# but execution continues to ensure every binary gets a chance to install.
-#
-# Idempotency is provided by download_binary() in lib/utils.sh — each binary
-# is skipped silently if it already exists and is executable.
+# All downloads attempted regardless of individual failures; returns 1 if
+# any failed. download_binary() (lib/utils.sh) skips silently if the binary
+# already exists and is executable.
 #
 # Reads:
 #   LOG_FILE — must be exported by install.sh; used by log_write in the
@@ -20,18 +15,13 @@
 #
 # Public interface: run_binaries()
 
-# To add a binary: one line here. Format: "name url"
 _BINARIES=(
     "yt-dlp        https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp"
-    "git_info      https://github.com/AswinGopal/git_info/releases/latest/download/git_info"
     "ytdownloader-linux  https://github.com/AswinGopal/ytdlp-gui/releases/latest/download/ytdownloader-linux"
 )
 
 # ------------------------------------------------------------------------------
 # run_binaries
-#
-# Ensure $HOME/.local/bin exists, export the bash functions needed by the gum
-# spin subprocess, then download each binary via a dedicated spinner call.
 # ------------------------------------------------------------------------------
 run_binaries() {
     local bin_dir="$HOME/.local/bin"

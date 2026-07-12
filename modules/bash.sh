@@ -2,15 +2,12 @@
 
 # modules/bash.sh
 #
-# Deploy bash dotfiles from bashfiles/$OS_ID/ to $HOME/ as hidden files.
-# Files named e.g. "bashrc" and "bash_aliases" are installed as "~/.bashrc"
-# and "~/.bash_aliases".
+# Downloads git_info, deploys bash_aliases (per-OS), and appends PS1 +
+# ~/.local/bin PATH setup to the existing ~/.bashrc.
 #
-# Backs up $HOME/.bashrc before deploying. Backup failure is a hard stop —
-# we never overwrite without a backup in place.
-#
-# Scope: file deployment only. git_info download belongs to binaries.sh.
-# Shell tool init (zoxide/fzf/uv) belongs to shell_tools.sh.
+# bashrc is appended to, never overwritten — each distro ships its own.
+# append_if_missing (lib/utils.sh) requires the target file to exist;
+# a missing ~/.bashrc is treated as a failure.
 #
 # Reads:
 #   REPO_ROOT — set by install.sh
@@ -22,34 +19,64 @@
 # run_bash
 # ------------------------------------------------------------------------------
 run_bash() {
-    local src_dir="$REPO_ROOT/bashfiles/$OS_ID"
+    local aliases_src="$REPO_ROOT/bashfiles/$OS_ID/bash_aliases"
+    local ps1_src="$REPO_ROOT/bashfiles/ps1"
+    local aliases_dest="$HOME/.bash_aliases"
     local bashrc="$HOME/.bashrc"
-
-    if [[ ! -d "$src_dir" ]]; then
-        log_error "Bash config source not found: $src_dir"
-        return 1
-    fi
-
-    # Back up .bashrc before overwriting. Skip if it does not yet exist
-    # (e.g. a minimal live environment).
-    if [[ -f "$bashrc" ]]; then
-        if ! cp "$bashrc" "${bashrc}.backup"; then
-            log_error "Failed to back up $bashrc — aborting to avoid data loss."
-            return 1
-        fi
-    fi
-
-    # Deploy all files from bashfiles/$OS_ID/ as hidden files in $HOME.
-    # Continue on per-file failure but record it — all files are attempted.
+    local bin_dir="$HOME/.local/bin"
+    local git_info_url="https://github.com/AswinGopal/git_info/releases/latest/download/git_info"
     local failed=0
-    local file filename
-    for file in "$src_dir/"*; do
-        filename=$(basename "$file")
-        if ! cp "$file" "$HOME/.$filename"; then
-            log_error "Failed to copy $filename to ~/.$filename"
+
+    # -- git_info: sole dependency of the PS1 git segment ------------------------
+    mkdir -p "$bin_dir" || { log_error "Failed to create $bin_dir"; failed=1; }
+
+    if ! download_binary "git_info" "$git_info_url" "$bin_dir/git_info"; then
+        log_error "Failed to download git_info — PS1 git segment will be unavailable."
+        failed=1
+    fi
+
+    # -- bash_aliases: per-OS content, still a full deploy ----------------------
+    if [[ ! -f "$aliases_src" ]]; then
+        log_error "bash_aliases source not found: $aliases_src"
+        failed=1
+    else
+        if [[ -f "$aliases_dest" ]]; then
+            if ! cp "$aliases_dest" "${aliases_dest}.backup"; then
+                log_error "Failed to back up $aliases_dest"
+                failed=1
+            fi
+        fi
+
+        if ! cp "$aliases_src" "$aliases_dest"; then
+            log_error "Failed to deploy bash_aliases to $aliases_dest"
             failed=1
         fi
-    done
+    fi
+
+    # -- bashrc: append-only, never overwritten ----------------------------------
+    if [[ ! -f "$bashrc" ]]; then
+        log_error "$bashrc not found — cannot append PS1/PATH setup."
+        failed=1
+    else
+        if [[ ! -f "$ps1_src" ]]; then
+            log_error "PS1 source not found: $ps1_src"
+            failed=1
+        else
+            local ps1_content
+            ps1_content=$(<"$ps1_src")
+
+            if ! append_if_missing "$bashrc" "# Powerline segment colors" "$ps1_content"; then
+                log_error "Failed to append PS1 setup to $bashrc"
+                failed=1
+            fi
+        fi
+
+        if ! append_if_missing "$bashrc" '$HOME/.local/bin' \
+            'export PATH="$HOME/.local/bin:$PATH"'; then
+            log_error "Failed to append .local/bin PATH export to $bashrc"
+            failed=1
+        fi
+    fi
 
     if [[ $failed -ne 0 ]]; then
         return 1
