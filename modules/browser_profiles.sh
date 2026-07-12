@@ -1,5 +1,5 @@
 #!/bin/bash
-
+#
 # modules/browser_profiles.sh
 #
 # Deploy browser profile desktop files and icons.
@@ -36,21 +36,14 @@
 #     profile present, e.g. user-created or from a prior run)
 #                                    → treated as already customized by the
 #                                      user; the module does nothing and
-#                                      returns 0. The .desktop files and
-#                                      user.js overrides this module deploys
-#                                      are hard-wired to the brave/chrome/edge
-#                                      profiles it creates, so partial
-#                                      execution (e.g. deploying desktop
-#                                      entries without recreating the
-#                                      profiles they point at) would produce
-#                                      broken launchers — the whole module is
-#                                      one unit, not independent steps.
+#                                      returns 0.
 #
 # Reads:
 #   REPO_ROOT — set by install.sh
 #   OS_ID     — set by install.sh (arch | fedora | ubuntu)
 #
 # Public interface: run_browser_profiles()
+
 
 # ------------------------------------------------------------------------------
 # _firefox_profiles_are_stock profiles_ini_path

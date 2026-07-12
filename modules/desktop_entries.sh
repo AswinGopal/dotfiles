@@ -19,16 +19,8 @@
 #   2. Drop its icon into applications/icons/<size>/<appname>.png.
 #   That is all — no code changes needed.
 #
-# Multiple apps at the same size and apps at different sizes are all handled
-# by the same loop — no collision possible, no special casing required.
-#
 # Icon install path is user-local on all three OSes (~/.local/share/icons/...).
 # No sudo required. No OS branching.
-#
-# Idempotent: cp overwrites on every run. gtk-update-icon-cache is a no-op if
-# the cache is already current. Safe to re-run.
-#
-# No spinner — all operations are local file copies (milliseconds).
 #
 # Reads:
 #   REPO_ROOT — set by install.sh

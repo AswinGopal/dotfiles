@@ -9,8 +9,6 @@
 # the target is not present ("Warning: NOT_ENABLED"). "Already not present" is
 # the desired state and is not treated as a failure. Only the reload is checked.
 #
-# No spinner — all firewall-cmd operations are local system calls (milliseconds).
-#
 # Public interface: run_firewall()
 
 # ------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # modules/fonts.sh
-
+#
 # User-local install — no sudo required anywhere in this module. A font
 # already present system-wide (e.g. from a prior sudo-based install, or a
 # distro font package) is still detected and skipped via fc-list: anyone
@@ -31,10 +31,6 @@
 #      download (spinner), unzip, copy.
 #   7. Run fc-cache -f once more, so newly installed fonts are live
 #      immediately and next run's pre-pass stays accurate.
-#
-# Idempotent: a font already visible to fontconfig (user or system-wide) is
-# skipped entirely — no API call, no download, no re-copy. The GitHub API is
-# only contacted when at least one font actually needs installing.
 #
 # Reads:
 #   LOG_FILE — must be exported by install.sh; used by log_write in the

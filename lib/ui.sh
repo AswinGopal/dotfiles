@@ -15,10 +15,10 @@
 # Global state this file reads:
 #   MODULES          — set by os/<distro>.sh. Format: "key|Label|default" per entry.
 #   LOG_FILE         — set by install.sh before any sourcing.
+#   RESULTS          — associative array populated by install.sh's run loop; read by show_summary.
 #
 # Global state this file writes:
 #   SELECTED_MODULES — associative array populated by show_checklist.
-#   RESULTS          — associative array read by show_summary.
 
 GUM="$HOME/.local/bin/gum"
 

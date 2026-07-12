@@ -4,9 +4,7 @@
 #
 # GNOME Shell / GSettings configuration. Not distro-specific — targets the
 # GNOME desktop environment itself, wherever it is running (Ubuntu, Fedora,
-# or Arch with GNOME installed). Superseded the old ubuntu_settings.sh:
-# every key this module touches (org.gnome.*, org.gtk.Settings.FileChooser)
-# is GNOME/GTK state, not Ubuntu-the-distro state.
+# or Arch with GNOME installed).
 #
 # GATE: run_gnome_settings() checks is_gnome_session() first and returns 0
 # (correct no-op, not a failure) if the current session is not GNOME. This
@@ -63,18 +61,6 @@ run_gnome_settings() {
         || { log_error "Failed to set timezone."; failed=1; }
 
     # -- Terminal shortcut: Super+Return → Ptyxis (custom keybinding) -----------
-    # GNOME no longer exposes a built-in "default terminal" media-key
-    # (org.gnome.settings-daemon.plugins.media-keys terminal is gone post-
-    # rewrite); Ptyxis must be registered as a custom keybinding instead.
-    # Schema/path/key values confirmed against a live GNOME instance.
-    #
-    # Treated as one atomic logical setting, not five independent ones: a
-    # partial write (e.g. the array registered but "binding" missing) is a
-    # broken, non-functional shortcut either way, so a single failure point
-    # is more honest than five separate pass/fail entries for what is
-    # functionally one setting. Each individual key is still idempotent via
-    # gsettings_set_if_changed — a key that already matches is a no-op even
-    # within this grouped block.
     local terminal_keybind_path="/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
     local terminal_keybind_schema="org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:$terminal_keybind_path"
     if ! { gsettings_set_if_changed org.gnome.settings-daemon.plugins.media-keys custom-keybindings \
@@ -92,9 +78,6 @@ run_gnome_settings() {
         || { log_error "Failed to disable mouse acceleration."; failed=1; }
 
     # -- Automatic suspend: off on AC power (battery left at default) -----------
-    # Confirmed via fresh-install vs configured-machine diff: stock default is
-    # 'suspend' on both AC and battery; only AC is overridden here, battery
-    # intentionally left untouched.
     gsettings_set_if_changed org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type "'nothing'" \
         || { log_error "Failed to disable automatic suspend on AC power."; failed=1; }
 

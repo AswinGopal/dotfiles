@@ -18,8 +18,6 @@
 # Idempotent: sudo cp overwrites, sudo chmod +x on an already-executable
 # file is a no-op. Safe to re-run.
 #
-# No spinner — all operations are local system calls (milliseconds).
-#
 # Reads:
 #   REPO_ROOT — set by install.sh
 #
