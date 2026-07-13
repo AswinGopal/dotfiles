@@ -191,7 +191,7 @@ show_summary() {
     printf '\n'
     "$GUM" style \
         --border normal \
-        --padding "1 2" \
+        --padding "0 1" \
         --border-foreground 240 \
         --bold \
         "Setup Summary"
