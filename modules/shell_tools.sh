@@ -25,8 +25,13 @@ run_shell_tools() {
 
     local failed=0
 
+    # pkg_install and log_write are bash functions; export them so the bash
+    # subprocess spawned by gum spin can resolve them.
+    export -f pkg_install
+    export -f log_write
+
     # -- zoxide ----------------------------------------------------------------
-    if ! pkg_install zoxide; then
+    if ! run_with_spinner "Installing zoxide..." bash -c 'pkg_install "$@"' _ zoxide; then
         log_error "Failed to install zoxide."
         failed=1
     elif ! zoxide init bash > "$HOME/.zoxide_init.bash"; then
@@ -41,7 +46,7 @@ run_shell_tools() {
     fi
 
     # -- fzf -------------------------------------------------------------------
-    if ! pkg_install fzf; then
+    if ! run_with_spinner "Installing fzf..." bash -c 'pkg_install "$@"' _ fzf; then
         log_error "Failed to install fzf."
         failed=1
     elif ! append_if_missing "$bashrc" "fzf --bash" \
@@ -53,7 +58,7 @@ run_shell_tools() {
     fi
 
     # -- uv --------------------------------------------------------------------
-    if ! pkg_install uv; then
+    if ! run_with_spinner "Installing uv..." bash -c 'pkg_install "$@"' _ uv; then
         log_error "Failed to install uv."
         failed=1
     elif ! uv generate-shell-completion bash > "$HOME/.uv-completion.bash"; then
