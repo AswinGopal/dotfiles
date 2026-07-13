@@ -40,7 +40,6 @@ MODULES=(
     "bash|Bash & dotfiles|on"
     "shell_tools|Shell tools|on"
     "binaries|Binaries|on"
-    "desktop_entries|Desktop entries|on"
     "deno|Deno|on"
     "fonts|Fonts|on"
     "mpv|MPV|on"
