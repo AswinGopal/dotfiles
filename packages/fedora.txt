@@ -3,3 +3,4 @@ gnome-tweaks
 jpegoptim
 tree
 igt-gpu-tools
+gcc
