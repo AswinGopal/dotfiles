@@ -25,6 +25,11 @@ run_shell_tools() {
 
     local failed=0
 
+    if ! cp "$bashrc" "${bashrc}.backup"; then
+        log_error "Failed to back up $bashrc — skipping shell tool setup."
+        return 1
+    fi
+
     # pkg_install and log_write are bash functions; export them so the bash
     # subprocess spawned by gum spin can resolve them.
     export -f pkg_install

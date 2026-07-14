@@ -57,6 +57,9 @@ run_bash() {
     if [[ ! -f "$bashrc" ]]; then
         log_error "$bashrc not found — cannot append PS1/PATH setup."
         failed=1
+    elif ! cp "$bashrc" "${bashrc}.backup"; then
+        log_error "Failed to back up $bashrc — skipping PS1/PATH setup."
+        failed=1
     else
         if [[ ! -f "$ps1_src" ]]; then
             log_error "PS1 source not found: $ps1_src"
