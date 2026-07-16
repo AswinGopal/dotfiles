@@ -45,6 +45,7 @@ _NERD_FONTS_API="https://api.github.com/repos/ryanoasis/nerd-fonts/releases/late
 _FONTS=(
     "Meslo.zip"
     "FiraCode.zip"
+    "CascadiaCode.zip"
 )
 
 # ------------------------------------------------------------------------------
