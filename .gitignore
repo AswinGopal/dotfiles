@@ -27,6 +27,7 @@
 !packages/**
 !setup/
 !setup/**
+!architecture.json
 
 # re-ignore pruned directories caught by wildcards
 /.git/

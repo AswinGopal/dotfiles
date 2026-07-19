@@ -1,0 +1,278 @@
+{
+  "project": {
+    "name": "dotfiles",
+    "goal": "Single unified repo replacing three separate Arch/Fedora/Ubuntu dotfiles repos. Gum-based TUI lets user select which modules to run. Replaces linear fire-and-forget scripts.",
+    "repo_root": "dotfiles/"
+  },
+  "collaborator_profile": {
+    "experience": "Veteran programmer and UI/UX engineer (specialist in bash scripting and Gum tui)",
+    "working_style": [
+      "Reason from first principles rather than jumping to solutions",
+      "No second guessing — decisions made are final unless explicitly reopened",
+      "Before generating code, have thorough understanding of how it affects the program's purpose and philosophy",
+      "Write production-quality code",
+      "Do not write code without explicit confirmation",
+      "Do not write new or existing files without explicit confirmation"
+    ]
+  },
+  "philosophy": [
+    "Modules encode WHAT to do. OS backends encode HOW to do it on each distro.",
+    "modules/ never calls pacman/dnf/apt directly — only pkg_install().",
+    "Every module is idempotent — safe to re-run.",
+    "Every module exposes exactly one public function: run_<module>().",
+    "Every module returns 0/1 — never calls exit.",
+    "Failures are recorded; execution of remaining modules continues.",
+    "The pre/post gum boundary is explicit: steps 1-5 use plain echo, step 6+ use gum.",
+    "No abstraction for a single caller. No over-engineering.",
+    "Production quality: explicit error handling, log_write on every failure, idempotency checks."
+  ],
+  "removed_from_scope": [
+    "protonvpn",
+    "start-ssh.sh and channels.toml",
+    "twitchtv",
+    "streamlink",
+    "terminal theme (obsolete since GNOME 50 / Ptyxis)",
+    "set-local-rtc timezone block (was in old ubuntu_settings.sh; dropped — user's Windows install now writes UTC to the hardware clock, so Linux's default RTC-as-UTC behavior is already correct and the override is unnecessary)",
+    "org.gnome.desktop.privacy remember-app-usage (considered for gnome_settings, removed by explicit decision — only remember-recent-files is set)",
+    "modules/desktop_entries.sh as a standalone module — install.sh's run loop has no cross-module dependency resolution (SELECTED_MODULES is purely what the user ticks), so a standalone module could be deselected while still leaving binaries.sh's downloads without their launchers. Desktop-entry deployment instead lives inside modules/binaries.sh as a private _deploy_desktop_entries() helper (see modules/binaries.sh), the same pattern used to pull zoxide/fzf/uv configuration into shell_tools.sh — a dependency is owned by the module whose checklist promise actually requires it, rather than solved with general dependency-resolution machinery in install.sh/ui.sh."
+  ],
+  "install_sh_flow": [
+    "1. detect OS via /etc/os-release ID field — pure bash, plain echo",
+    "2. source lib/utils.sh",
+    "3. source lib/pkg.sh — guard pkg_install() installed",
+    "4. source os/$OS_ID.sh — real pkg_install() overwrites guard; MODULES array declared",
+    "5. bootstrap_deps() — installs curl jq tar wget unzip sed git via pkg_install",
+    "6. bootstrap_gum() — downloads gum tarball from GitHub latest release, extracts binary to ~/.local/bin/gum, plain echo 'Preparing setup...'",
+    "--- GUM AVAILABLE FROM HERE ---",
+    "7. source lib/ui.sh",
+    "8. source all modules/*.sh",
+    "9. show_checklist() — populates SELECTED_MODULES",
+    "10. run loop — for each key in SELECTED_MODULES: show_info label, run_<module>(); RESULTS[key]=$?",
+    "11. show_summary()"
+  ],
+  "gum_bootstrap": {
+    "binary_dest": "$HOME/.local/bin/gum",
+    "idempotent": "skip if dest exists and is executable",
+    "arch_detection": "uname -m → x86_64 or arm64 (aarch64 mapped to arm64)",
+    "tarball_url": "queried from GitHub API: https://api.github.com/repos/charmbracelet/gum/releases/latest",
+    "asset_pattern": "gum_*_Linux_<arch>.tar.gz",
+    "extract_command": "tar -xzf gum.tar.gz --wildcards '*/gum' --strip-components=1 -C ~/.local/bin/",
+    "note": "strips versioned directory prefix e.g. gum_0.17.0_Linux_x86_64/ — works against any future release"
+  },
+  "global_state": {
+    "LOG_FILE": "set and exported by install.sh before any sourcing. Path: $REPO_ROOT/install.log. Must be exported — log_write uses it inside gum spin subprocesses.",
+    "MODULES": "declared by os/<distro>.sh. Array of strings: 'key|Display Label|default' where default is the string 'on' or 'off'",
+    "SELECTED_MODULES": "array. written by show_checklist(), read by install.sh run loop",
+    "RESULTS": "associative array. key → exit code. written by install.sh run loop, read by show_summary()",
+    "GUM": "set by ui.sh at source time: $HOME/.local/bin/gum. All gum calls use $GUM never bare gum",
+    "OS_ID": "set by install.sh after OS detection. Values: arch | fedora | ubuntu",
+    "REPO_ROOT": "set by install.sh: git rev-parse --show-toplevel with dirname fallback for tarball installs"
+  },
+  "modules_format": "Each MODULES array entry: 'key|Display Label|default'. default is 'on' or 'off'. Secure Boot is the only off-by-default module.",
+  "module_inventory": [
+    {
+      "key": "packages",
+      "label": "Install packages",
+      "default": "on",
+      "os": [
+        "arch",
+        "fedora",
+        "ubuntu"
+      ],
+      "reads": "packages/<os>.txt"
+    },
+    {
+      "key": "bash",
+      "label": "Bash & dotfiles",
+      "default": "on",
+      "os": [
+        "arch",
+        "fedora",
+        "ubuntu"
+      ],
+      "reads": "bashfiles/<os>/bash_aliases, bashfiles/starship.toml",
+      "note": "bash_aliases is per-OS content, deployed as a full file (backed up before overwrite). starship.toml is shared across all three OSes, deployed as a full file to ~/.config/starship.toml (backed up before overwrite, same pattern as bash_aliases). bashrc is never deployed/overwritten — each distro ships its own; this module backs it up (~/.bashrc.backup) before appending, then appends via append_if_missing: the starshell init hook (eval \"$(starshell init bash)\") and the ~/.local/bin PATH export. append_if_missing does not create ~/.bashrc if missing — treated as a failure. Also downloads the starshell binary (AswinGopal/starshell latest) via download_binary to ~/.local/bin/starshell — checking \"bash\" alone must yield a fully working prompt, independent of the binaries module. Prompt rendering itself (segments, colors, git status) is owned entirely by the starshell binary and starship.toml, not by this module or any bash snippet — bash.sh's job is only to fetch the binary, deploy the config, and wire up the one-line shell hook."
+    },
+    {
+      "key": "shell_tools",
+      "label": "Shell tools",
+      "default": "on",
+      "os": [
+        "arch",
+        "fedora",
+        "ubuntu"
+      ],
+      "note": "installs zoxide, fzf, uv itself via pkg_install (zoxide/fzf/uv are not in packages/<os>.txt — this module is their sole consumer) then configures shell init in ~/.bashrc for each: zoxide (init script + source line), fzf (eval line), uv (completion script + source line). Each tool independent — a failure in one does not block the others — but any failure now causes the module to return 1, so show_summary reflects a partial failure rather than a false success."
+    },
+    {
+      "key": "binaries",
+      "label": "Binaries",
+      "default": "on",
+      "os": [
+        "arch",
+        "fedora",
+        "ubuntu"
+      ],
+      "downloads": [
+        "yt-dlp",
+        "ytdownloader-linux (AswinGopal/ytdlp-gui latest)"
+      ],
+      "note": "single _BINARIES array with 'name url' entries. All equal: log and continue. Also owns deployment of applications/ (desktop entries + icons) via a private _deploy_desktop_entries helper. Deployment is a directory sweep of all of applications/, not a per-binary name lookup: the download-artifact name (e.g. ytdownloader-linux, upstream release-asset convention) and the desktop-entry/icon name (e.g. ytdownloader, desktop-integration convention) are not expected to match, ruling out name-based lookup. applications/ exists solely to serve binaries this module downloads — no desktop entry in this repo is unrelated to a _BINARIES entry — so a full sweep is safe and correct, not a scope leak. The sweep runs only if every download in the loop succeeded: a deployed .desktop file whose Exec= target failed to download is a launcher that appears to work and then fails silently when clicked, which is worse than no launcher at all. A sweep failure (copy or icon-cache error) also fails the module. Returns 1 if any download OR the gated sweep failed."
+    },
+    {
+      "key": "deno",
+      "label": "Deno",
+      "default": "on",
+      "os": [
+        "arch",
+        "fedora",
+        "ubuntu"
+      ],
+      "note": "zip download + extraction to ~/.deno/bin/. Official shell setup run with -y: creates ~/.deno/env, generates bash completions at ~/.local/share/bash-completion/completions/deno.bash, appends both source lines to ~/.bashrc. Must run after bash module — shell setup appends to the deployed .bashrc."
+    },
+    {
+      "key": "fonts",
+      "label": "Fonts",
+      "default": "on",
+      "os": [
+        "arch",
+        "fedora",
+        "ubuntu"
+      ],
+      "downloads": [
+        "Meslo.zip",
+        "FiraCode.zip from ryanoasis/nerd-fonts latest"
+      ],
+      "note": "single _FONTS array with zip filenames. Name derived via ${font_file%.zip}. Add a font: one line."
+    },
+    {
+      "key": "mpv",
+      "label": "MPV",
+      "default": "on",
+      "os": [
+        "arch",
+        "fedora",
+        "ubuntu"
+      ],
+      "note": "single shared mpv/ dir; seds __YT_DLP_PATH__"
+    },
+    {
+      "key": "browser_profiles",
+      "label": "Browser profiles",
+      "default": "on",
+      "os": [
+        "arch",
+        "fedora",
+        "ubuntu"
+      ],
+      "note": "single run_browser_profiles(). OS_ID case sets firefox_profile_dir only. Fresh-install precondition gate runs first: if profiles.ini exists and does NOT describe exactly {default, default-release} (checked via _firefox_profiles_are_stock, a stanza-aware bash parser scoped to [ProfileN] sections only), the module logs info and returns 0 without touching anything — treated as user-customized, out of scope for a fresh-install tool. If the gate passes: wipe Firefox profile dir, create brave/chrome/edge via firefox -CreateProfile, then per-profile deploy a user.js override via the profile_js map (brave→user-overrides.js, edge→user-overrides-erase_all.js, chrome→none) — resolved via find against the salted profile directory name immediately after each -CreateProfile call, since the salt isn't known beforehand. Then deploy .desktop from browser-profiles/$OS_ID/, icons from browser-profiles/*.png to user-local hicolor. gtk-update-icon-cache. No sudo. Profile dirs: Arch=$HOME/.mozilla/firefox, Fedora=$HOME/.config/mozilla/firefox, Ubuntu=$HOME/snap/firefox/common/.mozilla/firefox."
+    },
+    {
+      "key": "gnome_settings",
+      "label": "GNOME Settings",
+      "default": "on",
+      "os": [
+        "arch",
+        "fedora",
+        "ubuntu"
+      ],
+      "note": "Not distro-scoped — targets the GNOME desktop environment itself, wherever it runs. Listed on-by-default on all three OS backends; safety comes from a universal runtime gate inside the module (is_gnome_session(), in lib/utils.sh), not from per-OS module selection. is_gnome_session() checks XDG_CURRENT_DESKTOP as a colon-delimited token match (handles values like Ubuntu's 'ubuntu:GNOME'), returns 1 (correct no-op, not a failure) if unset or non-GNOME. Every write goes through gsettings_set_if_changed / timedatectl_set_timezone_if_changed (lib/utils.sh) instead of raw gsettings set/timedatectl set-timezone — both check the current value first and skip the write if it already matches, since gsettings set fires a change-notify D-Bus signal (visible redraw/flicker risk) even when the value is unchanged. Settings: window close shortcut (Super+W), idle-delay 0 (never blank), GNOME clock-format 12h, GTK FileChooser clock-format 12h, timezone Asia/Kolkata, terminal shortcut (Super+Return → Ptyxis via custom-keybindings custom0/ — 5 keys treated as one atomic logical setting/single failure point, since a partial write is a broken shortcut either way), mouse accel-profile 'flat' (disable acceleration), sleep-inactive-ac-type 'nothing' (disable automatic suspend on AC power only — battery intentionally left at stock 'suspend'), privacy remember-recent-files false."
+    },
+    {
+      "key": "rpmfusion",
+      "label": "RPM Fusion & Codecs",
+      "default": "on",
+      "os": [
+        "fedora"
+      ],
+      "note": "must run before packages module — listed first in os/fedora.sh MODULES"
+    },
+    {
+      "key": "firewall",
+      "label": "Firewall",
+      "default": "on",
+      "os": [
+        "fedora"
+      ]
+    },
+    {
+      "key": "secure_boot",
+      "label": "Secure Boot scripts",
+      "default": "off",
+      "os": [
+        "arch"
+      ],
+      "note": "destructive — off by default; gum_confirm before any write; declining returns 0 (not failure)"
+    }
+  ],
+  "repo_structure": {
+    "install.sh": "DONE — REPO_ROOT (git + dirname fallback), LOG_FILE exported, PATH prepended with ~/.local/bin. OS detection via /etc/os-release. bootstrap_deps (one pkg_install call). bootstrap_gum (idempotent, uname arch detection, GitHub API, mktemp tarball, tar extract, cleanup). Post-gum: source lib/ui.sh + modules/*.sh glob. show_checklist, run loop with show_info per module + RESULTS[key]=$?, show_summary.",
+    "lib/utils.sh": "DONE — log_write, download_binary, append_if_missing, gsettings_set_if_changed, timedatectl_set_timezone_if_changed, is_gnome_session. No external deps. Safe to source before gum/pkg/OS. gsettings_set_if_changed(schema,key,value): reads current value via gsettings get, skips the write if it already string-matches value (avoids the change-notify D-Bus signal a raw gsettings set fires even on an unchanged value), else attempts gsettings set and returns 0/1; string-comparison only, sufficient for scalar types (bool/string/enum/int), not intended for arrays/tuples. timedatectl_set_timezone_if_changed(timezone): same read-compare-write pattern against timedatectl show -p Timezone --value; sudo only on the write path. is_gnome_session(): pure predicate, checks XDG_CURRENT_DESKTOP as a colon-delimited token match against GNOME (handles 'ubuntu:GNOME' per the Desktop Entry Spec, not a substring match), returns 1 if unset (safe default — unknown session treated as not-GNOME).",
+    "lib/ui.sh": "DONE — GUM var, log_error, show_info, success_message, run_with_spinner, gum_confirm, gum_input, show_checklist, show_summary.",
+    "lib/pkg.sh": "DONE — guard pkg_install() + contract documentation only.",
+    "os/arch.sh": "DONE — implements pkg_install via pacman --noconfirm --needed. Declares MODULES for Arch. Order: packages, bash, shell_tools, binaries, deno, fonts, mpv, browser_profiles, gnome_settings, secure_boot. gnome_settings is on-by-default — safe because the module self-gates via is_gnome_session() at runtime; Arch does not guarantee a GNOME desktop, so the gate (not module selection) is what makes this safe here.",
+    "os/fedora.sh": "DONE — implements pkg_install via dnf -y. Declares MODULES for Fedora. Order: rpmfusion, packages, bash, shell_tools, binaries, deno, fonts, mpv, browser_profiles, firewall, gnome_settings. rpmfusion listed first — packages/fedora.txt includes RPM Fusion packages. gnome_settings listed last, on-by-default — safe via its universal is_gnome_session() runtime gate, same reasoning as arch.sh and ubuntu.sh.",
+    "os/ubuntu.sh": "DONE — implements pkg_install via apt-get -y. Declares MODULES for Ubuntu. Order: packages, bash, shell_tools, binaries, fonts, deno, mpv, browser_profiles, gnome_settings. Note: fonts comes before deno here — differs from arch/fedora. gnome_settings is listed last, on-by-default, safe via its universal is_gnome_session() runtime gate.",
+    "modules/packages.sh": "DONE — reads packages/$OS_ID.txt, strips blank lines and comments, then installs one package at a time in a loop, matching binaries.sh's per-item philosophy: one run_with_spinner call per package labeled \"Installing $package...\", log_error + failed=1 + continue on individual failure (does not abort the remaining packages), return 1 at the end if any package failed. export -f pkg_install, log_write before the loop for the gum spin subprocess. N packages means N separate package-manager invocations rather than one batched transaction — the same tradeoff binaries.sh accepts for its downloads.",
+    "modules/bash.sh": "DONE — downloads the starshell binary (AswinGopal/starshell latest) via download_binary to ~/.local/bin/starshell (mkdir -p'd if missing). Deploys bashfiles/$OS_ID/bash_aliases as a full file to ~/.bash_aliases (backed up before overwrite — per-OS content, genuinely differs). Deploys the shared bashfiles/starship.toml as a full file to ~/.config/starship.toml (backed up before overwrite — same pattern as bash_aliases; ~/.config created if missing). bashrc is never deployed/overwritten — each distro ships its own default; this module backs up ~/.bashrc to ~/.bashrc.backup unconditionally before touching it, then only appends onto it via append_if_missing: the starshell init hook (marker 'starshell init bash', content eval \"$(starshell init bash)\") and the ~/.local/bin PATH export (marker '$HOME/.local/bin'). append_if_missing requires the target file to exist — a missing ~/.bashrc is a real failure here, not silently skipped. No prompt logic (PS1, segments, git status) lives in this module or in bashrc content anymore — that responsibility moved entirely to the starshell binary reading starship.toml. Idempotency model matches every other module in the repo: writes are always re-applied on every run (not skipped if starshell is already installed) — download_binary's own internal skip-if-executable check is what prevents redundant network calls, it does not gate the rest of run_bash.",
+    "bashfiles/starship.toml": "DONE — shared starship-format config file for the starshell binary, identical across all three OSes, deployed verbatim (not templated, no sed substitution) to ~/.config/starship.toml by bash.sh. Prompt rendering (segments, colors, git status) is delegated entirely to the starshell binary reading this file at runtime. bash.sh's only involvement with prompt behavior is fetching the binary, deploying this file, and appending the one-line activation hook eval \"$(starshell init bash)\" to ~/.bashrc.",
+    "modules/shell_tools.sh": "DONE — installs zoxide, fzf, uv itself via pkg_install before configuring each (not listed in packages/<os>.txt — this module is their sole consumer, so checking \"shell_tools\" alone must yield a fully working result regardless of the packages module's selection). Per tool: pkg_install, then (zoxide/uv only) a generate-completion step, then append_if_missing into ~/.bashrc. Each tool is independent — a failure in one does not block the others — but success_message only fires once every step for that tool succeeds (avoids printing a success line right after an error for the same tool), and any single tool's failure now sets failed=1 so the module returns 1, causing show_summary to correctly reflect a partial failure rather than a false success.",
+    "modules/binaries.sh": "DONE — single _BINARIES array with 'name url' entries. Downloads: yt-dlp, ytdownloader-linux (AswinGopal/ytdlp-gui latest). All binaries equal: log and continue on failure during the download loop. export -f download_binary, log_write for spinner subprocess. Also owns deployment of applications/ via a private _deploy_desktop_entries() helper (not a public run_* interface — called only from run_binaries). _deploy_desktop_entries sweeps all of $REPO_ROOT/applications/ — every *.desktop to ~/.local/share/applications/, every applications/icons/<size>/*.png to ~/.local/share/icons/hicolor/<size>/apps/ (size from subdir name), then gtk-update-icon-cache if available. A missing applications/ dir is not an error (return 0), since not every _BINARIES entry has a GUI launcher. The sweep is a full-directory sweep rather than a per-binary name lookup because applications/ exists solely to serve binaries downloaded by this module (no unrelated desktop entries are ever expected there), and because the download-artifact name and the desktop-entry/icon name are not expected to match (e.g. ytdownloader-linux the binary vs ytdownloader.desktop/ytdownloader.png the entry) — a name-based lookup would need an explicit link field or a fragile naming heuristic; a full sweep needs neither. The sweep in run_binaries only fires if failed is still 0 after the entire download loop: a .desktop file whose Exec= binary failed to download is a launcher that looks present and then fails when clicked, which is worse than the launcher being absent. A sweep-internal failure (copy or mkdir error) also sets failed=1, so run_binaries' single return code honestly reflects both download and deployment outcomes.",
+    "modules/fonts.sh": "DONE — single _FONTS array with zip filenames; name derived via ${font_file%.zip}. One GitHub API call shared across all fonts. Per-font curl spinner (_fonts_install helper). mktemp temp dir with trap RETURN cleanup. fc-cache once after all fonts.",
+    "modules/mpv.sh": "DONE — cp $REPO_ROOT/mpv/* to ~/.config/mpv/, sed substitutes __YT_DLP_PATH__ with $HOME/.local/bin/yt-dlp. No spinner (fast file ops).",
+    "modules/browser_profiles.sh": "DONE — single run_browser_profiles() plus one private helper, _firefox_profiles_are_stock(). OS_ID case sets firefox_profile_dir only — the only per-OS difference in path resolution. Before any write: fresh-install precondition gate. If $firefox_profile_dir/profiles.ini exists, _firefox_profiles_are_stock parses it as a bash state machine (tracks current [SectionName], only collects Name= lines while inside a [ProfileN] section — avoids false matches on [General]/[InstallHASH] stanzas, whose own Default= field holds a path, not a name) and returns success only if the profile set found is exactly {default, default-release}, no more, no less. If profiles.ini is absent, treated as fresh (nothing to protect). If the gate fails (profiles.ini exists but describes anything other than exactly the stock pair — missing one, or extra user/prior-run profiles present), run_browser_profiles logs an info message (not an error — this is a correct no-op, not a failure) and returns 0 without wiping, creating, or deploying anything: the .desktop files and user.js overrides are hard-wired to the brave/chrome/edge profiles this module creates, so partial execution would produce broken launchers, hence gate-fail skips the whole module as one unit. If the gate passes: wipe Firefox profile directory, create three fixed profiles (brave, chrome, edge) via firefox -CreateProfile, then per-profile (inside the same loop, immediately after each -CreateProfile) deploy a user.js override per the profile_js associative array (brave→user-overrides.js, edge→user-overrides-erase_all.js, chrome→no entry → skipped) — source files live at browser-profiles/*.js (OS-independent, shared root), resolved into the profile's own salted directory via find \"$firefox_profile_dir\" -maxdepth 1 -type d -name \"*.$profile\" since the salt prefix isn't known until after profile creation. Then deploy .desktop files from browser-profiles/$OS_ID/, install icons from browser-profiles/*.png (shared root) to user-local hicolor path. gtk-update-icon-cache if available. No sudo, no interactive flow (the gate is fully mechanical — no gum_confirm).",
+    "modules/secure_boot.sh": "DONE — Arch only. Validates all three source files exist before any write. gum_confirm gate; declining returns 0. Deploys kernel-sbsign (+chmod +x), 80-secureboot.hook, remove-fallback-bootx64.hook.",
+    "modules/rpmfusion.sh": "DONE — Fedora only. pkg_install for RPM Fusion repo URLs and intel-media-driver. Direct dnf for swap and @multimedia group update (documented exception — cannot express via pkg_install). ffmpeg swap idempotency via rpm -q check.",
+    "modules/firewall.sh": "DONE — Fedora only. firewall-cmd --remove-* with stderr suppressed (not-present is idempotent, not an error). Only --reload exit code is checked.",
+    "modules/gnome_settings.sh": "DONE — not distro-scoped; targets the GNOME desktop environment itself, wherever it runs. run_gnome_settings() opens with an is_gnome_session() gate: returns 0 (show_info, correct no-op) if the current session is not GNOME, before touching anything. All writes use gsettings_set_if_changed / timedatectl_set_timezone_if_changed (lib/utils.sh) instead of raw gsettings/timedatectl calls — idempotent in the stricter 'skip if already correct' sense (not just 'safe to repeat'), to avoid the change-notify D-Bus signal a raw write fires even on an unchanged value. Blocks: window close (Super+W), idle-delay 0, GNOME clock-format 12h, GTK FileChooser clock-format 12h, timezone Asia/Kolkata (via timedatectl_set_timezone_if_changed), terminal shortcut (Ptyxis via org.gnome.settings-daemon.plugins.media-keys custom-keybindings, path custom0/ — 5 keys: array registration + name/command/binding/enable-in-lockscreen on the relocatable custom-keybinding schema instance, chained with && into one atomic if-block so a partial write reports as a single failure, not five), mouse accel-profile 'flat', sleep-inactive-ac-type 'nothing' (AC only — battery left at stock 'suspend'), privacy remember-recent-files false. Every setting is independent: a failing block sets failed=1 and logs via log_error but does not block subsequent blocks from running.",
+    "modules/deno.sh": "DONE — idempotency check on ~/.deno/bin/deno. arch detection (x86_64/aarch64 → linux-gnu targets). version fetch from dl.deno.land/release-latest.txt. mktemp temp dir with trap RETURN cleanup. curl spinner download to tmp zip. unzip -q -o to ~/.deno/bin/. chmod +x. official shell setup via: deno run -A --reload jsr:@deno/installer-shell-setup/bundled ~/.deno -y. Must run after bash module.",
+    "applications/": "Top-level directory, not ported from any old repo. Owned by modules/binaries.sh. Contains .desktop files and icons/ for GUI-launcher binaries downloaded by _BINARIES. Icon layout: icons/<size>/<appname>.png. Icon= field in .desktop must match <appname> (no extension). Currently contains: ytdownloader.desktop, icons/128x128/ytdownloader.png (sourced from AswinGopal/ytdlp-gui src-tauri/icons/128x128.png). Exec=ytdownloader-linux (bare binary name — resolves via PATH, no hardcoded home path). appname (ytdownloader) intentionally does not match the _BINARIES download-artifact name (ytdownloader-linux) — this is why binaries.sh sweeps applications/ wholesale rather than looking up a desktop entry by binary name.",
+    "setup/check-gsettings.sh": "DONE (standalone tool, not a module) — read-only diagnostic script, not sourced by install.sh, not part of MODULES/orchestration, no run_<module>() interface. Two sections: (1) targeted verification of specific known schema+key pairs via a check_key() helper (MISSING SCHEMA / MISSING KEY / OK + current value); (2) schema-discovery dumps via a dump_schema() helper (gsettings list-recursively) for schemas whose exact target key isn't already known. No gsettings set or timedatectl set-* calls anywhere — guaranteed read-only, no sudo. Run manually by the user (bash setup/check-gsettings.sh) to inspect current GNOME settings state independent of running gnome_settings.sh."
+  },
+  "implementation_order": [
+    "1. lib/utils.sh                          — DONE",
+    "2. lib/ui.sh                             — DONE",
+    "3. lib/pkg.sh                            — DONE",
+    "4. os/arch.sh, os/fedora.sh, os/ubuntu.sh — DONE",
+    "5. modules/* (independent of each other)  — DONE",
+    "6. install.sh (depends on everything)     — DONE"
+  ],
+  "behavioral_contracts": {
+    "every_module": [
+      "Exposes exactly one public function: run_<module>()",
+      "Returns 0 success / 1 failure — never calls exit",
+      "Is idempotent",
+      "Uses pkg_install() — never pacman/dnf/apt directly",
+      "Calls run_with_spinner for slow steps",
+      "Calls log_error before returning 1",
+      "Calls success_message on completion"
+    ],
+    "pkg_install": [
+      "Accepts one or more package names",
+      "Idempotent — skips already installed",
+      "Suppresses routine output",
+      "Returns 0/1",
+      "Never calls exit"
+    ]
+  },
+  "source_content_mapping": {
+    "bashfiles/arch/bash_aliases": "myarch/bash_configs/bash_aliases",
+    "bashfiles/fedora/bash_aliases": "myfedora/bashfiles/bash_aliases",
+    "bashfiles/ubuntu/bash_aliases": "myubuntu/bash/bash_aliases",
+    "bashfiles/<os>/bashrc": "REMOVED — no per-OS bashrc files. Each distro's own stock ~/.bashrc is left in place; bash.sh only appends PS1 + PATH setup onto it.",
+    "bashfiles/starship.toml": "new file, not ported from any old repo — starship-format config provided directly, deployed as-is to ~/.config/starship.toml by bash.sh. Replaces the retired bashfiles/ps1 (PS1-block-appended-into-bashrc) approach.",
+    "browser-profiles/arch/": "myarch/firefox/",
+    "browser-profiles/fedora/": "myfedora/browser-profiles/",
+    "browser-profiles/": "shared icons (brave.png, chrome.png, edge.png) at root — used by all three distros",
+    "browser-profiles/ubuntu/": "three static .desktop files (brave, chrome, edge) — pre-authored, no sed substitution",
+    "browser-profiles/user-overrides.js": "myfedora/browser-profiles/user-overrides.js — deployed into the brave profile only",
+    "browser-profiles/user-overrides-erase_all.js": "new file, not present in any old repo — deployed into the edge profile only",
+    "mpv/": "any one repo (identical content confirmed)",
+    "SB-sign-scripts/": "myarch/SB-sign-scripts/",
+    "setup/gh_setup.sh": "any one repo (manual bootstrap — not a TUI module)",
+    "packages/arch.txt": "myarch/setup/program_list.txt",
+    "packages/ubuntu.txt": "myubuntu/setup/program_list.txt",
+    "packages/fedora.txt": "derive from myfedora/setup/setup.sh installDnfTools: zoxide uv fzf mpv gnome-tweaks intel-media-driver jpegoptim tree"
+  },
+  "resume_prompt": "Paste this entire JSON into a new chat. lib/, os/, modules/, and install.sh are all written and consistent with the architecture described in module_inventory and repo_structure, including modules/binaries.sh's ownership of desktop-entry deployment via _deploy_desktop_entries() and modules/bash.sh's starshell/starship.toml-based prompt setup (prompt rendering is owned entirely by the starshell binary reading starship.toml, not by any bash/PS1 snippet). dotfiles-tree.txt is the authoritative target file layout. If resuming for a bug fix or new feature, state the specific file and change needed. Read repo_structure and any relevant already-written files before proceeding — do not write or modify any file without explicit confirmation."
+}
