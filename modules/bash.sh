@@ -2,8 +2,9 @@
 
 # modules/bash.sh
 #
-# Downloads git_info, deploys bash_aliases (per-OS), and appends PS1 +
-# ~/.local/bin PATH setup to the existing ~/.bashrc.
+# Downloads starshell, deploys bash_aliases (per-OS), copies starship.toml,
+# and appends the starshell init hook + ~/.local/bin PATH setup to the
+# existing ~/.bashrc.
 #
 # bashrc is appended to, never overwritten — each distro ships its own.
 # append_if_missing (lib/utils.sh) requires the target file to exist;
@@ -20,18 +21,19 @@
 # ------------------------------------------------------------------------------
 run_bash() {
     local aliases_src="$REPO_ROOT/bashfiles/$OS_ID/bash_aliases"
-    local ps1_src="$REPO_ROOT/bashfiles/ps1"
     local aliases_dest="$HOME/.bash_aliases"
+    local starship_src="$REPO_ROOT/bashfiles/starship.toml"
+    local starship_dest="$HOME/.config"
+    local starshell_url="https://github.com/AswinGopal/starshell/releases/latest/download/starshell"
+    local starshell_dest="$HOME/.local/bin"
     local bashrc="$HOME/.bashrc"
-    local bin_dir="$HOME/.local/bin"
-    local git_info_url="https://github.com/AswinGopal/git_info/releases/latest/download/git_info"
     local failed=0
 
-    # -- git_info: sole dependency of the PS1 git segment ------------------------
-    mkdir -p "$bin_dir" || { log_error "Failed to create $bin_dir"; failed=1; }
+    # -- starshell: prompt-rendering binary --------------------------------------
+    mkdir -p "$starshell_dest" || { log_error "Failed to create $starshell_dest"; failed=1; }
 
-    if ! download_binary "git_info" "$git_info_url" "$bin_dir/git_info"; then
-        log_error "Failed to download git_info — PS1 git segment will be unavailable."
+    if ! download_binary "starshell" "$starshell_url" "$starshell_dest/starshell"; then
+        log_error "Failed to download starshell"
         failed=1
     fi
 
@@ -53,25 +55,38 @@ run_bash() {
         fi
     fi
 
-    # -- bashrc: append-only, never overwritten ----------------------------------
-    if [[ ! -f "$bashrc" ]]; then
-        log_error "$bashrc not found — cannot append PS1/PATH setup."
-        failed=1
-    elif ! cp "$bashrc" "${bashrc}.backup"; then
-        log_error "Failed to back up $bashrc — skipping PS1/PATH setup."
+    # -- starship.toml: config for starshell -------------------------------------
+    if [[ ! -f "$starship_src" ]]; then
+        log_error "starship.toml not found: $starship_src"
         failed=1
     else
-        if [[ ! -f "$ps1_src" ]]; then
-            log_error "PS1 source not found: $ps1_src"
-            failed=1
-        else
-            local ps1_content
-            ps1_content=$(<"$ps1_src")
+        mkdir -p "$starship_dest" || { log_error "Failed to create $starship_dest"; failed=1; }
 
-            if ! append_if_missing "$bashrc" "# Powerline segment colors" "$ps1_content"; then
-                log_error "Failed to append PS1 setup to $bashrc"
+        if [[ -f "$starship_dest/starship.toml" ]]; then
+            if ! cp "$starship_dest/starship.toml" "$starship_dest/starship.toml.backup"; then
+                log_error "Failed to back up $starship_dest/starship.toml"
                 failed=1
             fi
+        fi
+
+        if ! cp "$starship_src" "$starship_dest/starship.toml"; then
+            log_error "Failed to deploy starship.toml to $starship_dest"
+            failed=1
+        fi
+    fi
+
+    # -- bashrc: append-only, never overwritten ----------------------------------
+    if [[ ! -f "$bashrc" ]]; then
+        log_error "$bashrc not found — cannot append starshell/PATH setup."
+        failed=1
+    elif ! cp "$bashrc" "${bashrc}.backup"; then
+        log_error "Failed to back up $bashrc — skipping starshell/PATH setup."
+        failed=1
+    else
+        if ! append_if_missing "$bashrc" 'starshell init bash' \
+            'eval "$(starshell init bash)"'; then
+            log_error "Failed to append starshell init to $bashrc"
+            failed=1
         fi
 
         if ! append_if_missing "$bashrc" '$HOME/.local/bin' \

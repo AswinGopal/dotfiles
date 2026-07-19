@@ -1,0 +1,130 @@
+palette = "powerline"
+
+# Multi-line layout with line-drawing elements and exact color transitions
+format = """
+\n╭─\
+[](username_bg)\
+$os\
+$username\
+[](fg:username_bg bg:directory_bg)\
+$directory\
+[](fg:directory_bg bg:python_bg)\
+$python\
+[](fg:python_bg bg:git_bg)\
+$git_branch\
+$git_status\
+[](fg:git_bg bg:time_bg)\
+$time\
+[](fg:time_bg)\
+\n│
+╰─$character"""
+
+right_format = ""
+add_newline = false
+
+[palettes.powerline]
+os_logo = '#fbf1c7'
+username_bg = "#344478"
+directory_bg = "#3a5ca8"
+python_bg = "#5460c4"
+python_fg = "#ffd43b"
+git_bg = "#7a5cc4"
+time_bg = "#9650aa"
+text_fg = "#ffffff"
+success_fg = "#00ffff"
+error_fg = "#ff5252"
+
+[palettes.dracula]
+os_logo = '#fbf1c7'
+username_bg = "#6272a4"
+directory_bg = "#434c5e"
+python_bg = "#4c566a"
+python_fg = "#ffd43b"
+git_bg = "#06969a"
+time_bg = "#6272a4"
+text_fg = "#ffffff"
+success_fg = "#00ffff"
+error_fg = "#ff5252"
+
+[os]
+disabled = false
+style = "bg:username_bg fg:os_logo"
+
+[os.symbols]
+Ubuntu = "󰕈"
+SUSE = ""
+Raspbian = "󰐿"
+Mint = "󰣭"
+Macos = "󰀵"
+Manjaro = ""
+Linux = "󰌽"
+Gentoo = "󰣨"
+Fedora = "󰣛"
+Alpine = ""
+Arch = "󰣇"
+Artix = "󰣇"
+EndeavourOS = ""
+CentOS = ""
+Debian = "󰣚"
+Redhat = "󱄛"
+RedHatEnterprise = "󱄛"
+Pop = ""
+
+[username]
+show_always = true
+style_user = "bg:username_bg fg:text_fg"
+style_root = "bg:username_bg fg:text_fg"
+format = '[ $user ]($style)'
+
+[directory]
+style = "bg:directory_bg fg:text_fg"
+format = "[ $path ]($style)[$read_only]($read_only_style)"
+truncation_length = 999
+truncate_to_repo = false
+
+read_only = " "
+read_only_style = "bg:directory_bg fg:text_fg"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+"Videos" = " "
+
+[python]
+style = "bg:python_bg fg:python_fg"
+format = '[ 󰌠 ($virtualenv) ]($style)'
+detect_extensions = []
+detect_files = []
+detect_folders = []
+
+[git_branch]
+symbol = " "
+style = "bg:git_bg fg:text_fg"
+format = '[ $symbol$branch ]($style)'
+
+[git_status]
+style = "bg:git_bg fg:text_fg"
+format = '[$all_status$ahead_behind ]($style)'
+
+ahead = '\[↑${count}\] '
+behind = '\[↓${count}\] '
+staged = '\[!${count}\] '
+modified = '\[+${count}\] '
+untracked = '\[?${count}\] '
+deleted = '\[-${count}\] '
+renamed = '\[»${count}\] '
+conflicted = '\[=${count}\] '
+stashed = '\[*${count}\] '
+diverged = '\[↑${ahead_count}↓${behind_count}\] '
+
+[time]
+disabled = false
+time_format = "%I:%M %p" # 12-hour AM/PM format
+style = "bg:time_bg fg:text_fg"
+format = '[ $time ]($style)'
+
+[character]
+success_symbol = "[](fg:success_fg)"
+error_symbol = "[](fg:error_fg)"
