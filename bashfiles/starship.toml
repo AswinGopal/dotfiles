@@ -81,16 +81,16 @@ style = "bg:directory_bg fg:text_fg"
 format = "[ $path ]($style)[$read_only]($read_only_style)"
 truncation_length = 999
 truncate_to_repo = false
-
 read_only = " "
 read_only_style = "bg:directory_bg fg:text_fg"
+#home_symbol = "󰋜 "
 
-[directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
-"Videos" = " "
+#[directory.substitutions]
+#"Documents" = "󰈙 "
+#"Downloads" = " "
+#"Music" = " "
+#"Pictures" = " "
+#"Videos" = " "
 
 [python]
 style = "bg:python_bg fg:python_fg"
