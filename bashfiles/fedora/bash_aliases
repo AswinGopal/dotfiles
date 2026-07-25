@@ -2,10 +2,7 @@ alias trim='sudo fstrim -va'
 alias usage='sudo intel_gpu_top'
 alias fedup='sudo dnf upgrade'
 alias delete='shred -uz -n100'
-alias ga='git add -A'
-alias gc='git commit'
-alias gp='git push'
-alias gb='git branch --list'
+alias cls='clear'
 
 #------------- GIT -----------------
 # status & inspection

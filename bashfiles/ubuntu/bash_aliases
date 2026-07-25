@@ -6,6 +6,7 @@ alias trim='sudo fstrim -va'
 alias internet='sudo systemctl restart NetworkManager'
 alias cleanshistory='truncate -s 0 $HOME/.bash_history'
 alias start-ssh='. $HOME/.local/bin/start-ssh.sh'
+alias cls='clear'
 
 #------------- GIT -----------------
 # status & inspection
