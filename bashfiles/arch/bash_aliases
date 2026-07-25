@@ -5,6 +5,26 @@ alias trim='sudo fstrim -va'
 alias internet='sudo systemctl restart NetworkManager'
 alias cleanshistory='truncate -s 0 $HOME/.bash_history'
 alias start-ssh='. $HOME/.local/bin/start-ssh.sh'
+
+#------------- GIT -----------------
+# status & inspection
+alias gst='git status -sb'
+alias gd='git diff'
+alias gdc='git diff --cached'
+alias gl='git log --oneline --graph --decorate -20'
+
+# staging & committing
 alias ga='git add -A'
 alias gc='git commit'
+alias gcm='git commit -m'
+alias gca='git commit --amend'
+
+# branches
+alias gb='git branch --list'
+alias gsw='git switch'
+alias gsc='git switch -c'
+
+# remote
 alias gp='git push'
+alias gpl='git pull'
+alias gf='git fetch'

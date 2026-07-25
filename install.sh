@@ -48,6 +48,23 @@ esac
 
 echo "Detected OS: $OS_ID"
 
+if [[ "$OS_ID" == "fedora" ]] \
+    && grep -q 'rd.live.image' /proc/cmdline 2>/dev/null \
+    && [[ -d /run/initramfs/live ]]; then
+
+    echo "Live Fedora environment detected — expanding live overlay..."
+
+    if [[ ! -f "$REPO_ROOT/setup/live-os-setup.sh" ]]; then
+        echo "Error: setup/live-os-setup.sh not found." >&2
+        exit 1
+    fi
+
+    if ! sudo bash "$REPO_ROOT/setup/live-os-setup.sh"; then
+        echo "Error: Failed to expand live overlay. Aborting — package installs would fail without sufficient storage." >&2
+        exit 1
+    fi
+fi
+
 # ==============================================================================
 # PRE-GUM SOURCING
 #
