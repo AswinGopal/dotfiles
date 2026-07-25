@@ -1,8 +1,5 @@
-alias trim='sudo fstrim -va'
-alias usage='sudo intel_gpu_top'
+#------------- PACKAGE MANAGEMENT -----------------
 alias fedup='sudo dnf upgrade'
-alias delete='shred -uz -n100'
-alias cls='clear'
 
 #------------- GIT -----------------
 # status & inspection
@@ -26,3 +23,37 @@ alias gsc='git switch -c'
 alias gp='git push'
 alias gpl='git pull'
 alias gf='git fetch'
+
+#------------- NAVIGATION -----------------
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ~='cd ~'
+alias -- -='cd -'          # jump to previous directory
+
+#------------- LISTING -----------------
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+alias lt='ls -altr'        # sort by time, newest last
+
+#------------- SAFETY NETS -----------------
+alias rm='rm -i'           # confirm before deleting
+alias rmd='rm -rf'         # delete directory
+alias cp='cp -i'           # confirm before overwrite
+alias mv='mv -i'           # confirm before overwrite
+alias mkdir='mkdir -pv'    # create parent dirs, verbose
+
+#------------- SYSTEM INFO -----------------
+alias df='df -h'           # human-readable sizes
+alias du='du -h'
+alias free='free -h'
+alias path='echo -e ${PATH//:/\\n}'   # print PATH, one entry per line
+
+#------------- MISC -----------------
+alias h='history'
+alias c='clear'
+alias reload='source ~/.bashrc'
+alias grep='grep --color=auto'
+alias trim='sudo fstrim -va'
+alias usage='sudo intel_gpu_top'
+alias cleanshistory='history -c && history -w && truncate -s 0 "$HOME/.bash_history"'
