@@ -15,6 +15,7 @@ alias ga='git add -A'
 alias gc='git commit'
 alias gcm='git commit -m'
 alias gca='git commit --amend'
+alias grs='git restore .'
 
 # branches
 alias gb='git branch --list'
