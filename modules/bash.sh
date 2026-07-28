@@ -94,6 +94,12 @@ run_bash() {
             log_error "Failed to append .local/bin PATH export to $bashrc"
             failed=1
         fi
+
+        if ! append_if_missing "$bashrc" '.bash_aliases' \
+            $'if [ -f ~/.bash_aliases ]; then\n    . ~/.bash_aliases\nfi'; then
+            log_error "Failed to append .bash_aliases sourcing to $bashrc"
+            failed=1
+        fi
     fi
 
     if [[ $failed -ne 0 ]]; then
