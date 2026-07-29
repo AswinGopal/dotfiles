@@ -25,6 +25,12 @@ alias gp='git push'
 alias gpl='git pull'
 alias gf='git fetch'
 
+#------------- RUST CARGO -----------------
+alias cc='cargo clean'
+alias cbr='cargo build --release'
+alias cch='cargo check'
+alias ccl='cargo clippy'
+
 #------------- NAVIGATION -----------------
 alias ..='cd ..'
 alias ...='cd ../..'
