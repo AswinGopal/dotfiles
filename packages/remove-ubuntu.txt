@@ -1,0 +1,18 @@
+# GNOME apps
+gnome-contacts
+gnome-maps
+gnome-weather
+gnome-music
+gnome-boxes
+gnome-tour
+
+# LibreOffice — Arch ships one full-suite meta-package; whichever of
+# these two you don't have installed is skipped harmlessly.
+libreoffice-*
+
+# Video player — Showtime replaces Totem as of GNOME 49; not yet in the
+# official Arch repos, AUR only. Harmless to list if you don't have it.
+showtime
+
+# NVIDIA proprietary driver stack
+*nvidia*
