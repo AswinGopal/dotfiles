@@ -91,10 +91,10 @@ run_rpmfusion() {
     success_message "RPM Fusion repositories enabled."
 
     # -- ffmpeg swap -----------------------------------------------------------
-    # Idempotent: skip if ffmpeg-free is no longer present — the swap has
-    # already run. Checking for ffmpeg-free (the package being replaced) is the
-    # correct predicate; ffmpeg may exist independently via other means.
-    if rpm -q ffmpeg-free &>/dev/null; then
+    # Idempotent: skip if ffmpeg is already present. based on the assumption that 
+    # rpmfusion is run at the beginning of the setup process. this might fail if
+    # rpmfusion module was ran on a system where ffmpeg was installed by other means.
+    if rpm -q ffmpeg &>/dev/null; then
         run_with_spinner "Swapping ffmpeg-free for ffmpeg..." \
             sudo dnf swap -y ffmpeg-free ffmpeg --allowerasing
 
@@ -107,7 +107,7 @@ run_rpmfusion() {
 
     # -- @multimedia group update ----------------------------------------------
     run_with_spinner "Installing multimedia codecs..." \
-        sudo dnf update -y @multimedia \
+        sudo dnf install -y @multimedia \
         --setopt="install_weak_deps=False" \
         --exclude=PackageKit-gstreamer-plugin
 
