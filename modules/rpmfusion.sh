@@ -6,16 +6,19 @@
 #
 # Operations:
 #   1. Install RPM Fusion free + nonfree repos for the current Fedora version.
-#   2. Swap ffmpeg-free for ffmpeg (idempotent — skipped if already swapped).
+#   2. Ensure ffmpeg (RPM Fusion build) is installed — swap, plain install, or
+#      no-op depending on starting state; refuses and warns if a non-RPM-Fusion
+#      ffmpeg is already present (see the ffmpeg swap section below for the
+#      full case breakdown).
 #   3. Update the @multimedia group with weak deps disabled.
 #   4. Detect the primary GPU vendor (AMD or Intel) and install the
 #      corresponding driver (default: intel-media-driver for Skylake+).
 #
-# Philosophy note: steps 1 and 4's install use pkg_install(). Steps 2 and 3,
-# and the AMD vulkan-driver swap in step 4, call dnf directly — dnf swap and
-# dnf update @multimedia carry flags and semantics that cannot be expressed
-# through the pkg_install() interface. This is an intentional, documented
-# exception. This module is Fedora-only.
+# Philosophy note: steps 1 and 4's install use pkg_install(). The swap in step
+# 2, step 3, and the AMD vulkan-driver swap in step 4 call dnf directly — dnf
+# swap and dnf update @multimedia carry flags and semantics that cannot be
+# expressed through the pkg_install() interface. This is an intentional,
+# documented exception. This module is Fedora-only.
 #
 # Must run before the packages module — enforced by os/fedora.sh MODULES order.
 #
@@ -91,10 +94,37 @@ run_rpmfusion() {
     success_message "RPM Fusion repositories enabled."
 
     # -- ffmpeg swap -----------------------------------------------------------
-    # Idempotent: skip if ffmpeg is already present. based on the assumption that 
-    # rpmfusion is run at the beginning of the setup process. this might fail if
-    # rpmfusion module was ran on a system where ffmpeg was installed by other means.
+    # Ensures RPM Fusion's ffmpeg ends up installed, handling every starting
+    # state a target system may be in:
+    #   1. ffmpeg-free present, no ffmpeg   → swap (the stock-Fedora case).
+    #   2. ffmpeg present, from rpmfusion   → already done, no-op.
+    #   3. neither present                  → minimal/live base, no swap
+    #                                          target exists; plain install.
+    #   4. ffmpeg present, NOT from rpmfusion (manual/COPR/third-party repo)
+    #                                        → its dependency graph may
+    #                                          collide with RPM Fusion's
+    #                                          build if layered via a plain
+    #                                          install or blindly swapped.
+    #                                          Not auto-resolved: warn and
+    #                                          fail so the user can
+    #                                          intervene manually.
+    #
+    # Origin (case 2 vs. 4) is read from DNF's installed-package history via
+    # `dnf repoquery --from_repo`, not rpm metadata — rpm does not reliably
+    # track which repo an installed package came from. An empty result
+    # (e.g. a package installed via `rpm -i`, bypassing dnf entirely, so no
+    # history entry exists) is treated the same as "not from rpmfusion".
     if rpm -q ffmpeg &>/dev/null; then
+        local ffmpeg_repo
+        ffmpeg_repo=$(dnf repoquery --installed --qf '%{from_repo}' ffmpeg 2>/dev/null)
+
+        if [[ "$ffmpeg_repo" == rpmfusion-free* ]]; then
+            success_message "ffmpeg already installed from RPM Fusion."
+        else
+            log_error "ffmpeg is installed but not from RPM Fusion (repo: ${ffmpeg_repo:-unknown}). Its dependencies may conflict with RPM Fusion's build — manual intervention required before this module can proceed."
+            return 1
+        fi
+    elif rpm -q ffmpeg-free &>/dev/null; then
         run_with_spinner "Swapping ffmpeg-free for ffmpeg..." \
             sudo dnf swap -y ffmpeg-free ffmpeg --allowerasing
 
@@ -103,6 +133,15 @@ run_rpmfusion() {
             return 1
         fi
         success_message "ffmpeg swapped."
+    else
+        run_with_spinner "Installing ffmpeg..." \
+            bash -c 'pkg_install "$@"' _ ffmpeg
+
+        if [[ $? -ne 0 ]]; then
+            log_error "Failed to install ffmpeg."
+            return 1
+        fi
+        success_message "ffmpeg installed."
     fi
 
     # -- @multimedia group update ----------------------------------------------
