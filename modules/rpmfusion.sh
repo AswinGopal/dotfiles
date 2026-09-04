@@ -6,10 +6,11 @@
 #
 # Operations:
 #   1. Install RPM Fusion free + nonfree repos for the current Fedora version.
-#   2. Ensure ffmpeg (RPM Fusion build) is installed — swap, plain install, or
-#      no-op depending on starting state; refuses and warns if a non-RPM-Fusion
-#      ffmpeg is already present (see the ffmpeg swap section below for the
-#      full case breakdown).
+#   2. Ensure ffmpeg (RPM Fusion build) is installed via an unconditional
+#      `dnf swap ffmpeg-free ffmpeg --allowerasing` when it isn't already
+#      present from RPM Fusion; refuses and warns if a non-RPM-Fusion ffmpeg
+#      is already present (see the ffmpeg swap section below for the full
+#      case breakdown).
 #   3. Update the @multimedia group with weak deps disabled.
 #   4. Detect the primary GPU vendor (AMD or Intel) and install the
 #      corresponding driver (default: intel-media-driver for Skylake+).
@@ -96,20 +97,35 @@ run_rpmfusion() {
     # -- ffmpeg swap -----------------------------------------------------------
     # Ensures RPM Fusion's ffmpeg ends up installed, handling every starting
     # state a target system may be in:
-    #   1. ffmpeg-free present, no ffmpeg   → swap (the stock-Fedora case).
-    #   2. ffmpeg present, from rpmfusion   → already done, no-op.
-    #   3. neither present                  → minimal/live base, no swap
-    #                                          target exists; plain install.
-    #   4. ffmpeg present, NOT from rpmfusion (manual/COPR/third-party repo)
+    #   1. ffmpeg present, from rpmfusion   → already done, no-op.
+    #   2. ffmpeg present, NOT from rpmfusion (manual/COPR/third-party repo)
     #                                        → its dependency graph may
     #                                          collide with RPM Fusion's
-    #                                          build if layered via a plain
-    #                                          install or blindly swapped.
-    #                                          Not auto-resolved: warn and
-    #                                          fail so the user can
+    #                                          build. Not auto-resolved: warn
+    #                                          and fail so the user can
     #                                          intervene manually.
+    #   3. ffmpeg absent, regardless of whether ffmpeg-free is present
+    #                                        → `dnf swap -y ffmpeg-free ffmpeg
+    #                                          --allowerasing`, unconditionally.
+    #                                          --allowerasing is required even
+    #                                          when ffmpeg-free is also absent:
+    #                                          RPM Fusion's ffmpeg-libs
+    #                                          conflicts with *-free multimedia
+    #                                          libraries (e.g.
+    #                                          libswresample-free) that base
+    #                                          Fedora packages can pull in
+    #                                          independently of ffmpeg-free
+    #                                          itself — a plain `dnf install
+    #                                          ffmpeg` fails on such a system
+    #                                          with an unresolved-conflict
+    #                                          error. `dnf swap`'s remove-spec
+    #                                          is resolved as an ordinary
+    #                                          package-spec, not a precondition
+    #                                          that must already be installed,
+    #                                          so this is safe to run even when
+    #                                          ffmpeg-free was never present.
     #
-    # Origin (case 2 vs. 4) is read from DNF's installed-package history via
+    # Origin (case 1 vs. 2) is read from DNF's installed-package history via
     # `dnf repoquery --from_repo`, not rpm metadata — rpm does not reliably
     # track which repo an installed package came from. An empty result
     # (e.g. a package installed via `rpm -i`, bypassing dnf entirely, so no
@@ -124,18 +140,9 @@ run_rpmfusion() {
             log_error "ffmpeg is installed but not from RPM Fusion (repo: ${ffmpeg_repo:-unknown}). Its dependencies may conflict with RPM Fusion's build — manual intervention required before this module can proceed."
             return 1
         fi
-    elif rpm -q ffmpeg-free &>/dev/null; then
-        run_with_spinner "Swapping ffmpeg-free for ffmpeg..." \
-            sudo dnf swap -y ffmpeg-free ffmpeg --allowerasing
-
-        if [[ $? -ne 0 ]]; then
-            log_error "Failed to swap ffmpeg-free for ffmpeg."
-            return 1
-        fi
-        success_message "ffmpeg swapped."
     else
         run_with_spinner "Installing ffmpeg..." \
-            bash -c 'pkg_install "$@"' _ ffmpeg
+            sudo dnf swap -y ffmpeg-free ffmpeg --allowerasing
 
         if [[ $? -ne 0 ]]; then
             log_error "Failed to install ffmpeg."
@@ -185,8 +192,7 @@ run_rpmfusion() {
         fi
 
         # Idempotent: skip if mesa-vulkan-drivers (non-freeworld) is no longer
-        # present — the swap has already run. Mirrors the ffmpeg-free check
-        # above.
+        # present — the swap has already run.
         if rpm -q mesa-vulkan-drivers &>/dev/null; then
             run_with_spinner "Swapping mesa-vulkan-drivers for freeworld variant..." \
                 sudo dnf swap -y mesa-vulkan-drivers mesa-vulkan-drivers-freeworld
